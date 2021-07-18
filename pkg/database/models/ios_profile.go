@@ -1,7 +1,9 @@
 package models
 
+import "gorm.io/gorm"
+
 type IosProfile struct {
-	base
+	*gorm.Model
 	AppName          string
 	BundleIdentifier string
 	AppVersion       string

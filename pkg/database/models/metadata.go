@@ -1,9 +1,11 @@
 package models
 
+import "gorm.io/gorm"
+
 type Metadata struct {
-	base
+	*gorm.Model
 	Type      string
-	ProfileId uint  
-	Key       string
+	ProfileId uint
+	Key       string `gorm:"index"`
 	Value     string
 }

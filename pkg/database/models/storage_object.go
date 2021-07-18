@@ -1,7 +1,9 @@
 package models
 
+import "gorm.io/gorm"
+
 type StorageObject struct {
-	base
+	*gorm.Model
 	Name        string
 	Path        string
 	ContentType string

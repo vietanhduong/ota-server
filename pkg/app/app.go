@@ -67,7 +67,15 @@ func (a *App) Initialize() {
 	if err != nil {
 		a.Echo.Logger.Fatalf("initialize database connection failed!\nErr: %+v", err)
 	}
+
 	a.DB = db
+
+	// auto migrate database on startup
+	if autoMigrate, _ := env.GetEnvAsIntOrFallback("AUTO_MIGRATE", 0); autoMigrate == 1 {
+		if err := a.DB.Migration(); err != nil {
+			a.Echo.Logger.Fatalf("migrate database was error %+v", err)
+		}
+	}
 
 	// register routers
 	a.initializeRoutes()
