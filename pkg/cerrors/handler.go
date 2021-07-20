@@ -10,12 +10,12 @@ func HTTPErrorHandler(err error, ctx echo.Context) {
 	code := http.StatusInternalServerError
 	var msg interface{}
 	msg = err.Error()
-	// try to parse echo error
+
 	if he, ok := err.(*echo.HTTPError); ok {
 		code = he.Code
 		msg = he.Message
 	}
-	// try to parse cerror
+
 	if ce, ok := err.(*CError); ok {
 		code = ce.Code
 		msg = ce.Error()
@@ -25,7 +25,7 @@ func HTTPErrorHandler(err error, ctx echo.Context) {
 		"title": msg,
 		"code":  code,
 	}
-	if err := ctx.Render(code, "error.html", data); err != nil {
+	if err := ctx.JSON(code, data); err != nil {
 		ctx.Logger().Error(err)
 	}
 	ctx.Logger().Error(err)

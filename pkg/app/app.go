@@ -4,12 +4,12 @@ import (
 	"context"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/vietanhduong/ota-server/pkg/apis/profile"
+	"github.com/vietanhduong/ota-server/pkg/apis/v1/profile"
+	"github.com/vietanhduong/ota-server/pkg/apis/v1/storage_object"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/database"
-	"github.com/vietanhduong/ota-server/pkg/templates"
+	"github.com/vietanhduong/ota-server/pkg/logger"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -34,25 +34,18 @@ func (a *App) Initialize() {
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut, http.MethodOptions, http.MethodPatch},
 	}))
 
-	// static files
-	a.Echo.Static("/", "public")
-
-	// register templates
-	a.Echo.Renderer = &templates.Template{
-		Templates: template.Must(template.ParseGlob("public/templates/*.html")),
-	}
-
 	// register error handler
 	a.Echo.HTTPErrorHandler = cerrors.HTTPErrorHandler
 
 	// customize request log
 	a.Echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "INFO  | ${time_rfc3339} | ${status} | ${method} ${uri} \n",
+		Format: "INFO | ${time_rfc3339} | ${status} | ${method} ${uri} \n",
 		Output: a.Echo.Logger.Output(),
 	}))
 
 	// custom logger
 	a.Echo.Logger.SetHeader("${level} | ${time_rfc3339} | ${short_file}:${line} | ${message}")
+	logger.InitializeLogger()
 
 	// initialize database connection
 	// make sure you have injected the database configuration
@@ -120,8 +113,8 @@ func (a *App) Run(addr string) {
 }
 
 func (a *App) initializeRoutes() {
-	g := a.Echo.Group("")
+	g := a.Echo.Group("/api/v1")
 
 	profile.Register(g, a.DB)
-
+	storage_object.Register(g, a.DB)
 }

@@ -5,13 +5,15 @@ import (
 	"github.com/vietanhduong/ota-server/pkg/database"
 )
 
-type resource struct{}
+type register struct{}
 
 func Register(g *echo.Group, db *database.DB) {
-	res := resource{}
-	g.GET("/", res.home)
+	res := register{}
+	profileGroup := g.Group("/profiles")
+
+	profileGroup.GET("/", res.home)
 }
 
-func (res *resource) home(ctx echo.Context) error {
+func (r *register) home(ctx echo.Context) error {
 	return nil
 }
