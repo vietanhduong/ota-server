@@ -12,12 +12,12 @@ import (
 	"time"
 )
 
-type gcs struct {
+type GoogleStorage struct {
 	client *storage.Client
 	bucket *storage.BucketHandle
 }
 
-func NewGcs(credentialsPath, bucketName string) (*gcs, error) {
+func NewGcs(credentialsPath, bucketName string) (*GoogleStorage, error) {
 	// verify credentials path
 	if !file.IsExist(credentialsPath) {
 		return nil, errors.New(fmt.Sprintf("%s does not exist", credentialsPath))
@@ -31,13 +31,13 @@ func NewGcs(credentialsPath, bucketName string) (*gcs, error) {
 
 	// initial bucket
 	bucket := storageClient.Bucket(bucketName)
-	return &gcs{
+	return &GoogleStorage{
 		client: storageClient,
 		bucket: bucket,
 	}, nil
 }
 
-func (g *gcs) UploadObject(obj Object) error {
+func (g *GoogleStorage) UploadObject(obj *Object) error {
 	// setup context with timeout
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
