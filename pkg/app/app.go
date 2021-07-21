@@ -9,11 +9,13 @@ import (
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/logger"
+	"github.com/vietanhduong/ota-server/pkg/templates"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"text/template"
 	"time"
 )
 
@@ -36,6 +38,11 @@ func (a *App) Initialize() {
 
 	// register error handler
 	a.Echo.HTTPErrorHandler = cerrors.HTTPErrorHandler
+
+	// register template
+	a.Echo.Renderer = &templates.Template{
+		Templates: template.Must(template.ParseGlob("public/templates/*")),
+	}
 
 	// customize request log
 	a.Echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
