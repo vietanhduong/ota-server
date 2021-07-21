@@ -9,7 +9,7 @@ func (db *DB) Migration() (err error) {
 	}
 
 	// migrate ios_profile model
-	if err = db.AutoMigrate(&models.IosProfile{}); err != nil {
+	if err = db.AutoMigrate(&models.Profile{}); err != nil {
 		return
 	}
 

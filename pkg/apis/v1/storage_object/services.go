@@ -1,12 +1,15 @@
 package storage_object
 
 import (
+	"errors"
 	"fmt"
 	"github.com/lithammer/shortuuid/v3"
+	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/google/gcs"
 	"github.com/vietanhduong/ota-server/pkg/logger"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
+	"net/http"
 	"regexp"
 	"time"
 )
@@ -31,7 +34,7 @@ func NewService(db *database.DB) *service {
 	}
 }
 
-func (s *service) UploadToGoogleStorage(uploadedFile *UploadedFile) (*ResponseObject, error) {
+func (s *service) UploadToStorage(uploadedFile *File) (*ResponseObject, error) {
 	// validate file extension
 	if err := ValidateExtension(uploadedFile.Filename); err != nil {
 		return nil, err
@@ -62,5 +65,46 @@ func (s *service) UploadToGoogleStorage(uploadedFile *UploadedFile) (*ResponseOb
 		ObjectId: model.ID,
 		AbsPath:  uploadedFile.AbsPath,
 		Filename: model.Name,
+	}, nil
+}
+
+func (s *service) GetObject(objectId int) (*File, error) {
+	// verify object id
+	object, err := s.repo.FindById(uint(objectId))
+	if err != nil {
+		return nil, err
+	}
+
+	if object == nil {
+		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
+	}
+	return &File{
+		Filename:    object.Name,
+		ContentType: object.ContentType,
+		AbsPath:     object.Path,
+		CreatedAt:   object.CreatedAt,
+		UpdatedAt:   object.UpdatedAt,
+	}, nil
+}
+
+func (s *service) DownloadObject(objectId int) (*File, error) {
+	// verify object id
+	object, err := s.repo.FindById(uint(objectId))
+	if err != nil {
+		return nil, err
+	}
+
+	if object == nil {
+		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
+	}
+
+	content, err := s.storage.ReadObject(object.Path)
+	if err != nil {
+		return nil, err
+	}
+	return &File{
+		Filename:    object.Name,
+		ContentType: object.ContentType,
+		Content:     content,
 	}, nil
 }

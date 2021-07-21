@@ -1,10 +1,14 @@
 package storage_object
 
-type UploadedFile struct {
-	Filename    string
-	Content     []byte
-	ContentType string
-	AbsPath     string
+import "time"
+
+type File struct {
+	Filename    string    `json:"filename"`
+	Content     []byte    `json:"-"`
+	ContentType string    `json:"content_type"`
+	AbsPath     string    `json:"abs_path,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type ResponseObject struct {

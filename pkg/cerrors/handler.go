@@ -6,6 +6,11 @@ import (
 	"net/http"
 )
 
+type Response struct {
+	Code    int         `json:"code"`
+	Message interface{} `json:"message"`
+}
+
 func HTTPErrorHandler(err error, ctx echo.Context) {
 	code := http.StatusInternalServerError
 	var msg interface{}
@@ -21,11 +26,12 @@ func HTTPErrorHandler(err error, ctx echo.Context) {
 		msg = ce.Error()
 	}
 
-	data := map[string]interface{}{
-		"title": msg,
-		"code":  code,
+	response := &Response{
+		Code:    code,
+		Message: msg,
 	}
-	if err := ctx.JSON(code, data); err != nil {
+
+	if err := ctx.JSON(code, response); err != nil {
 		ctx.Logger().Error(err)
 	}
 	ctx.Logger().Error(err)

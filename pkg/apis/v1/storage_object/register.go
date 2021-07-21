@@ -1,18 +1,21 @@
 package storage_object
 
 import (
+	"errors"
 	"github.com/labstack/echo/v4"
+	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/middlewares"
 	"io/ioutil"
-	"mime/multipart"
 	"net/http"
+	"strconv"
 )
 
 type StorageService interface {
-	UploadToGoogleStorage(uploadedFile *UploadedFile) (*ResponseObject, error)
+	UploadToStorage(uploadedFile *File) (*ResponseObject, error)
+	DownloadObject(objectId int) (*File, error)
+	GetObject(objectId int) (*File, error)
 }
-
 type register struct {
 	storageSvc StorageService
 }
@@ -23,12 +26,8 @@ func Register(g *echo.Group, db *database.DB) {
 	}
 
 	storageGroup := g.Group("/storages")
-	storageGroup.GET("/", res.home)
+	storageGroup.GET("/:id/download/*", res.download)
 	storageGroup.POST("/upload", res.upload, middlewares.BasicAuth)
-}
-
-func (r *register) home(ctx echo.Context) error {
-	return nil
 }
 
 func (r *register) upload(ctx echo.Context) error {
@@ -43,24 +42,38 @@ func (r *register) upload(ctx echo.Context) error {
 		return err
 	}
 
-	defer func(f multipart.File) {
-		_ = f.Close()
-	}(f)
+	defer cerrors.Close(f)
 
 	// read content
 	content, err := ioutil.ReadAll(f)
 	if err != nil {
 		return err
 	}
-	uploadedFile := &UploadedFile{
+	uploadedFile := &File{
 		Filename:    file.Filename,
 		Content:     content,
 		ContentType: file.Header.Get("Content-Type"),
 	}
 
-	resObj, err := r.storageSvc.UploadToGoogleStorage(uploadedFile)
+	resObj, err := r.storageSvc.UploadToStorage(uploadedFile)
 	if err != nil {
 		return err
 	}
 	return ctx.JSON(http.StatusCreated, resObj)
+}
+
+func (r *register) download(ctx echo.Context) error {
+	reqObjId := ctx.Param("id")
+	objectId, err := strconv.Atoi(reqObjId)
+	if err != nil {
+		return cerrors.NewCError(http.StatusBadRequest, errors.New("invalid object id"))
+	}
+
+	file, err := r.storageSvc.DownloadObject(objectId)
+
+	if err != nil {
+		return err
+	}
+
+	return ctx.Blob(http.StatusOK, file.ContentType, file.Content)
 }

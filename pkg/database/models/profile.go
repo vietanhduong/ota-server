@@ -2,7 +2,7 @@ package models
 
 import "gorm.io/gorm"
 
-type IosProfile struct {
+type Profile struct {
 	*gorm.Model
 	AppName          string
 	BundleIdentifier string

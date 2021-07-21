@@ -6,18 +6,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/utils/file"
 	"google.golang.org/api/option"
 	"io"
+	"io/ioutil"
 	"time"
 )
 
 type GoogleStorage struct {
 	client *storage.Client
-	bucket *storage.BucketHandle
+	bucket string
 }
 
-func NewGcs(credentialsPath, bucketName string) (*GoogleStorage, error) {
+func NewGcs(credentialsPath, bucket string) (*GoogleStorage, error) {
 	// verify credentials path
 	if !file.IsExist(credentialsPath) {
 		return nil, errors.New(fmt.Sprintf("%s does not exist", credentialsPath))
@@ -29,8 +31,6 @@ func NewGcs(credentialsPath, bucketName string) (*GoogleStorage, error) {
 		return nil, err
 	}
 
-	// initial bucket
-	bucket := storageClient.Bucket(bucketName)
 	return &GoogleStorage{
 		client: storageClient,
 		bucket: bucket,
@@ -46,7 +46,7 @@ func (g *GoogleStorage) UploadObject(obj *Object) error {
 	// upload an object with storage writer
 	src := bytes.NewReader(obj.Content)
 
-	w := g.bucket.Object(obj.OutputPath).NewWriter(ctx)
+	w := g.client.Bucket(g.bucket).Object(obj.OutputPath).NewWriter(ctx)
 
 	if _, err := io.Copy(w, src); err != nil {
 		return err
@@ -59,3 +59,23 @@ func (g *GoogleStorage) UploadObject(obj *Object) error {
 	return nil
 }
 
+func (g *GoogleStorage) ReadObject(object string) ([]byte, error) {
+	// setup context with timeout
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+
+	rc, err := g.client.Bucket(g.bucket).Object(object).NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer cerrors.Close(rc)
+
+	content, err := ioutil.ReadAll(rc)
+	if err != nil {
+		return nil, err
+	}
+
+	return content, nil
+}
