@@ -29,11 +29,11 @@ function App() {
         // just ignore if metadata does not contain both `repo` and `commit` key
         if (!('repo' in metadata) || !('commit' in metadata)) return ''
         // display first 6 letter of commit hash
-        return (<>
+        return (<Box style={{display: "inline-flex"}}>
             <b>commit: </b>
             <Link href={`${metadata.repo}/commit/${metadata.commit}`}
                   target='_blank'>{metadata.commit.substring(0, 6)}</Link>
-        </>)
+        </Box>)
     }
 
     React.useEffect(() => {
@@ -42,14 +42,17 @@ function App() {
 
 
     return (
-        <Box>
-            <Box style={{maxWidth: 768, margin: "0 auto"}}>
-                <List disablePadding component={Paper}>
+        <Box style={{}}>
+            <Box style={{maxWidth: 680, margin: "0 auto"}}>
+                <List disablePadding component={Paper} style={{marginBottom: 10}}>
                     <ListItem divider>
-                        <ListItemText primary={<Typography variant='h5'><img alt="" style={{width: 30}}
-                                                                             src={"apple-icon-57x57.png"}/><span>Over-The-Air
-                            Server</span></Typography>}/>
+                        <ListItemText primary={<div style={{display: "flex", justifyContent: "start"}}>
+                            <img alt="" style={{width: 30}} src={"apple-icon-57x57.png"}/>
+                            <Typography variant='h5' style={{paddingTop: 3}}>Over-The-Air Server</Typography>
+                        </div>}/>
                     </ListItem>
+                </List>
+                <List disablePadding component={Paper}>
                     {data.map((item, index) => (
                         <ListItem key={item.profile_id} divider={index + 1 !== data.length} style={{paddingRight: 120}}>
                             <ListItemText primary={item.app_name}
@@ -66,7 +69,7 @@ function App() {
                                 >
                                     <Button disableElevation variant='contained' color='primary'
                                             style={{borderRadius: 18}}>
-                                        <Typography variant='body2'>INSTALL</Typography>
+                                        <Typography variant='body2'>GET</Typography>
                                     </Button>
                                 </Link>
                             </ListItemSecondaryAction>
