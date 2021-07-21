@@ -16,6 +16,7 @@ type StorageService interface {
 type MetadataService interface {
 	CreateMetadata(profileId int, metadata map[string]string) ([]*metadata.Metadata, error)
 	GetMetadata(profileId int) ([]*metadata.Metadata, error)
+	GetMetadataByListProfileId(profileIds []uint) (map[uint][]*metadata.Metadata, error)
 }
 
 type service struct {
@@ -30,6 +31,36 @@ func NewService(db *database.DB) *service {
 		storageSvc:  storage_object.NewService(db),
 		metadataSvc: metadata.NewService(db),
 	}
+}
+
+func (s *service) GetProfiles() ([]*ResponseProfile, error) {
+	profiles, err := s.repo.All()
+	if err != nil {
+		return nil, err
+	}
+	// prepare profile ids
+	var profileIds []uint
+	for _, p := range profiles {
+		profileIds = append(profileIds, p.ID)
+	}
+
+	// fetch metadata
+	mm, err := s.metadataSvc.GetMetadataByListProfileId(profileIds)
+	if err != nil {
+		return nil, err
+	}
+
+	// convert to response object
+	var result []*ResponseProfile
+	for _, p := range profiles {
+		profile := ToResponseProfile(p)
+		if m, ok := mm[profile.ProfileId]; ok {
+			profile.Metadata = ConvertMetadataListToMap(m)
+		}
+		result = append(result, profile)
+	}
+
+	return result, nil
 }
 
 func (s *service) GetProfile(profileId int) (*ResponseProfile, error) {

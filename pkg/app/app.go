@@ -28,8 +28,8 @@ func (a *App) Initialize() {
 	a.Echo = echo.New()
 
 	// configure server
+	a.Echo.Pre(middleware.RemoveTrailingSlash())
 	a.Echo.Use(middleware.Gzip())
-	a.Echo.Use(middleware.RemoveTrailingSlash())
 	a.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAcceptEncoding},

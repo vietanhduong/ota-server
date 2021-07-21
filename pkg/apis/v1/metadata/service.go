@@ -45,3 +45,21 @@ func (s *service) GetMetadata(profileId int) ([]*Metadata, error) {
 
 	return result, nil
 }
+
+func (s *service) GetMetadataByListProfileId(profileIds []uint) (map[uint][]*Metadata, error) {
+	metadataModels, err := s.repo.FindByListProfileId(profileIds)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[uint][]*Metadata)
+	for _, mm := range metadataModels {
+		if _, ok := result[mm.ProfileId]; !ok {
+			var tmp []*Metadata
+			result[mm.ProfileId] = tmp
+		}
+		result[mm.ProfileId] = append(result[mm.ProfileId], ToMetadata(mm))
+	}
+
+	return result, nil
+}

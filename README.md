@@ -22,3 +22,4 @@ HOST=example.com # the application's host
 
 - [ ] Apply auth (Google)
 - [ ] Download IPA from GCS as a stream
+- [ ] Build docker

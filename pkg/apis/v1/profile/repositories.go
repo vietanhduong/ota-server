@@ -14,6 +14,7 @@ type repository struct {
 type Repository interface {
 	Insert(req *RequestProfile) (*models.Profile, error)
 	FindById(objectId uint) (*models.Profile, error)
+	All() ([]*models.Profile, error)
 }
 
 func NewRepository(db *database.DB) *repository {
@@ -41,3 +42,10 @@ func (r *repository) FindById(objectId uint) (*models.Profile, error) {
 	}
 	return model, err
 }
+
+func (r *repository) All() ([]*models.Profile, error) {
+	var profiles []*models.Profile
+	err := r.Find(&profiles).Error
+	return profiles, err
+}
+

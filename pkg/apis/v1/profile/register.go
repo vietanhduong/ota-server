@@ -15,6 +15,7 @@ var Host = env.GetEnvAsStringOrFallback("HOST", "ota.anhdv.dev")
 type Service interface {
 	CreateProfile(reqProfile *RequestProfile) (*ResponseProfile, error)
 	GetProfile(profileId int) (*ResponseProfile, error)
+	GetProfiles() ([]*ResponseProfile, error)
 }
 
 type register struct {
@@ -27,14 +28,19 @@ func Register(g *echo.Group, db *database.DB) {
 	}
 	profileGroup := g.Group("/profiles")
 
-	profileGroup.GET("/", res.home)
+	profileGroup.GET("", res.home)
 	profileGroup.POST("/ios", res.createProfile, middlewares.BasicAuth)
 	profileGroup.GET("/ios/:id", res.getProfile)
 	profileGroup.GET("/ios/:id/manifest.plist", res.getManifest)
 }
 
 func (r *register) home(ctx echo.Context) error {
-	return nil
+	profiles, err := r.profileSvc.GetProfiles()
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, profiles)
 }
 
 func (r *register) createProfile(ctx echo.Context) error {
