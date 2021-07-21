@@ -6,5 +6,3 @@ services:
       - "8081:8081"
     env_file:
       - .env
-    volumes:
-      - /Users/vietanhduong/.private/mobile-internal-utilities-279006-68c723127762.json:/credentials.json:ro
