@@ -1,7 +1,6 @@
 package storage_object
 
 import (
-	"errors"
 	"github.com/labstack/echo/v4"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/database"
@@ -66,7 +65,7 @@ func (r *register) download(ctx echo.Context) error {
 	reqObjId := ctx.Param("id")
 	objectId, err := strconv.Atoi(reqObjId)
 	if err != nil {
-		return cerrors.NewCError(http.StatusBadRequest, errors.New("invalid object id"))
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid object id")
 	}
 
 	file, err := r.storageSvc.DownloadObject(objectId)

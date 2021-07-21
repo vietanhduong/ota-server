@@ -30,7 +30,6 @@ func (r *repository) Insert(req *RequestProfile) (*models.Profile, error) {
 	}
 
 	err := r.Create(&model).Error
-
 	return model, err
 }
 

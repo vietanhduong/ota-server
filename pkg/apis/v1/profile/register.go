@@ -5,10 +5,12 @@ import (
 	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/middlewares"
 	"net/http"
+	"strconv"
 )
 
 type Service interface {
 	CreateProfile(reqProfile *RequestProfile) (*ResponseProfile, error)
+	GetProfile(profileId int) (*ResponseProfile, error)
 }
 
 type register struct {
@@ -23,6 +25,7 @@ func Register(g *echo.Group, db *database.DB) {
 
 	profileGroup.GET("/", res.home)
 	profileGroup.POST("/ios", res.createProfile, middlewares.BasicAuth)
+	profileGroup.GET("/ios/:id", res.getProfile)
 }
 
 func (r *register) home(ctx echo.Context) error {
@@ -39,4 +42,19 @@ func (r *register) createProfile(ctx echo.Context) error {
 		return err
 	}
 	return ctx.JSON(http.StatusCreated, res)
+}
+
+func (r *register) getProfile(ctx echo.Context) error {
+	reqProfileId := ctx.Param("id")
+	profileId, err := strconv.Atoi(reqProfileId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid profile id")
+	}
+
+	profile, err := r.profileSvc.GetProfile(profileId)
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, profile)
 }
