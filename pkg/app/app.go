@@ -36,6 +36,14 @@ func (a *App) Initialize() {
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut, http.MethodOptions, http.MethodPatch},
 	}))
 
+	// serve SPA
+	a.Echo.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:   env.GetEnvAsStringOrFallback("STATIC_PATH", "./web"),
+		Index:  "index.html",
+		Browse: false,
+		HTML5:  true,
+	}))
+
 	// register error handler
 	a.Echo.HTTPErrorHandler = cerrors.HTTPErrorHandler
 

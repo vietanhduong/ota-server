@@ -16,6 +16,7 @@ ROOT_SECRET=basic_secret
 GOOGLE_CREDENTIALS=/path/to/credentials.json # i'm using google cloud storage to storage .ipa or apk
 GCS_BUCKET=krystal-builds # bucket name 
 HOST=example.com # the application's host
+STATIC_PATH=/path/to/spa/build/folder
 ```
 
 ### TODO

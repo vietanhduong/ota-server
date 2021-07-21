@@ -21,3 +21,4 @@
 .idea
 .env
 node_modules/
+build/
