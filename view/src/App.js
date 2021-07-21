@@ -32,7 +32,7 @@ function App() {
         return (<Box style={{display: "inline-flex"}}>
             <b>commit: </b>
             <Link href={`${metadata.repo}/commit/${metadata.commit}`}
-                  target='_blank'>{metadata.commit.substring(0, 6)}</Link>
+                  target='_blank'>{" "}{metadata.commit.substring(0, 6)}</Link>
         </Box>)
     }
 
