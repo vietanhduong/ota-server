@@ -14,7 +14,8 @@ AUTO_MIGRATE=1 # 1 = auto migrate when startup, on production it should be 0 or 
 ROOT_USER=basic_user # i'm using basic auth 
 ROOT_SECRET=basic_secret 
 GOOGLE_CREDENTIALS=/path/to/credentials.json # i'm using google cloud storage to storage .ipa or apk
-GCS_BUCKET=krystal-builds # bucket name 
+GCS_BUCKET=bucket-name # bucket name 
+PORT=8081
 HOST=example.com # the application's host
 STATIC_PATH=/path/to/spa/build/folder
 ```
@@ -23,4 +24,5 @@ STATIC_PATH=/path/to/spa/build/folder
 
 - [ ] Apply auth (Google)
 - [ ] Download IPA from GCS as a stream
-- [ ] Build docker
+- [x] Build docker
+- [ ] Integrate GitHub Actions

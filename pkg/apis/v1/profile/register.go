@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-var Host = env.GetEnvAsStringOrFallback("HOST", "ota.anhdv.dev")
+var Host = env.GetEnvAsStringOrFallback("HOST", "https://ota.anhdv.dev")
 
 type Service interface {
 	CreateProfile(reqProfile *RequestProfile) (*ResponseProfile, error)
@@ -86,7 +86,7 @@ func (r *register) getManifest(ctx echo.Context) error {
 		"app_name":  profile.AppName,
 		"bundle_id": profile.BundleIdentifier,
 		// ipa_path could be download api
-		"ipa_path": fmt.Sprintf("https://%s/api/v1/storages/%d/download/build.ipa", Host, profile.StorageObjectID),
+		"ipa_path": fmt.Sprintf("%s/api/v1/storages/%d/download/build.ipa", Host, profile.StorageObjectID),
 		"version":  profile.Version,
 	}
 	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationXML)
