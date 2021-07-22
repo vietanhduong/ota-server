@@ -25,4 +25,4 @@ STATIC_PATH=/path/to/spa/build/folder
 - [ ] Apply auth (Google)
 - [ ] Download IPA from GCS as a stream
 - [x] Build docker
-- [ ] Integrate GitHub Actions
+- [x] Integrate GitHub Actions
