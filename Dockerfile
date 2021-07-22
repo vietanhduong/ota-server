@@ -24,6 +24,6 @@ COPY --from=builder /src/app ./app
 COPY --from=web /usr/src/build ./web
 COPY public public
 
-ENTRYPOINT ["./app"]
+ENTRYPOINT ["/cmd/app"]
 
 
