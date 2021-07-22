@@ -26,6 +26,7 @@ function App() {
     }, []);
 
     const renderGitCommit = (metadata) => {
+        metadata = metadata || {}
         // just ignore if metadata does not contain both `repo` and `commit` key
         if (!('repo' in metadata) || !('commit' in metadata)) return ''
         // display first 6 letter of commit hash
