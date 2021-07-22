@@ -31,7 +31,7 @@ func Register(g *echo.Group, db *database.DB) {
 	}
 
 	storageGroup := g.Group("/storages")
-	storageGroup.GET("/:id/download/*", res.download)
+	storageGroup.GET("/:id/download", res.download)
 	storageGroup.POST("/upload", res.upload, middlewares.BasicAuth)
 }
 
@@ -84,7 +84,8 @@ func (r *register) download(ctx echo.Context) error {
 	}
 
 	ctx.Response().Header().Set(echo.HeaderContentType, object.ContentType)
-	ctx.Response().Header().Set(echo.HeaderContentLength, fmt.Sprintf("%d",stream.Attrs.Size))
+	ctx.Response().Header().Set(echo.HeaderContentLength, fmt.Sprintf("%d", stream.Attrs.Size))
+	ctx.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", object.Filename))
 
 	ctx.Response().WriteHeader(http.StatusOK)
 
