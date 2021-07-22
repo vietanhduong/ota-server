@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"cloud.google.com/go/storage"
 	"context"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/database"
@@ -83,6 +84,8 @@ func (r *register) download(ctx echo.Context) error {
 	}
 
 	ctx.Response().Header().Set(echo.HeaderContentType, object.ContentType)
+	ctx.Response().Header().Set(echo.HeaderContentLength, fmt.Sprintf("%d",stream.Attrs.Size))
+
 	ctx.Response().WriteHeader(http.StatusOK)
 
 	buf := bytes.NewBuffer(make([]byte, 0, stream.Attrs.Size))
