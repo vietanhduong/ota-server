@@ -1,10 +1,14 @@
 package storage_object
 
 import (
+	"bytes"
+	"cloud.google.com/go/storage"
+	"context"
 	"github.com/labstack/echo/v4"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/middlewares"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -14,6 +18,7 @@ type StorageService interface {
 	UploadToStorage(uploadedFile *File) (*ResponseObject, error)
 	DownloadObject(objectId int) (*File, error)
 	GetObject(objectId int) (*File, error)
+	DownloadObjectAsStream(ctx context.Context, objectId int) (*storage.Reader, error)
 }
 type register struct {
 	storageSvc StorageService
@@ -67,12 +72,21 @@ func (r *register) download(ctx echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid object id")
 	}
-
-	file, err := r.storageSvc.DownloadObject(objectId)
-
+	object, err := r.storageSvc.GetObject(objectId)
 	if err != nil {
 		return err
 	}
 
-	return ctx.Blob(http.StatusOK, file.ContentType, file.Content)
+	stream, err := r.storageSvc.DownloadObjectAsStream(ctx.Request().Context(), objectId)
+	if err != nil {
+		return err
+	}
+
+	ctx.Response().Header().Set(echo.HeaderContentType, object.ContentType)
+	ctx.Response().WriteHeader(200)
+
+	buf := bytes.NewBuffer(make([]byte, 0, stream.Attrs.Size))
+	_, err = io.Copy(ctx.Response(), io.TeeReader(stream, buf))
+
+	return err
 }

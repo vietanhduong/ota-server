@@ -79,3 +79,8 @@ func (g *GoogleStorage) ReadObject(object string) ([]byte, error) {
 
 	return content, nil
 }
+
+func (g *GoogleStorage) ReadObjectAsStream(ctx context.Context, object string) (*storage.Reader, error) {
+	rc, err := g.client.Bucket(g.bucket).Object(object).NewReader(ctx)
+	return rc, err
+}

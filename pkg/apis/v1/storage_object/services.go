@@ -1,6 +1,8 @@
 package storage_object
 
 import (
+	"cloud.google.com/go/storage"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/lithammer/shortuuid/v3"
@@ -107,4 +109,19 @@ func (s *service) DownloadObject(objectId int) (*File, error) {
 		ContentType: object.ContentType,
 		Content:     content,
 	}, nil
+}
+
+func (s *service) DownloadObjectAsStream(ctx context.Context, objectId int) (*storage.Reader, error) {
+	// verify object id
+	object, err := s.repo.FindById(uint(objectId))
+	if err != nil {
+		return nil, err
+	}
+
+	if object == nil {
+		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
+	}
+
+	stream, err := s.storage.ReadObjectAsStream(ctx, object.Path)
+	return stream, err
 }
