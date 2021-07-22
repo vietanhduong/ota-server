@@ -30,7 +30,7 @@ jobs:
       - prepare
     runs-on: ubuntu-18.04
     env:
-      IMAGE_NAME: vietanhd0817/ota-server
+      IMAGE_NAME: vietanhs0817/ota-server
       BRANCH: ${{ needs.prepare.outputs.current_branch }}
       SHA_TAG: ${{ needs.prepare.outputs.commit_tag }}
     steps:
