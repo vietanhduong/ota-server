@@ -83,7 +83,7 @@ func (r *register) download(ctx echo.Context) error {
 	}
 
 	ctx.Response().Header().Set(echo.HeaderContentType, object.ContentType)
-	ctx.Response().WriteHeader(200)
+	ctx.Response().WriteHeader(http.StatusOK)
 
 	buf := bytes.NewBuffer(make([]byte, 0, stream.Attrs.Size))
 	_, err = io.Copy(ctx.Response(), io.TeeReader(stream, buf))
