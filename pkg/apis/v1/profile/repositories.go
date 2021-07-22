@@ -45,7 +45,7 @@ func (r *repository) FindById(objectId uint) (*models.Profile, error) {
 
 func (r *repository) All() ([]*models.Profile, error) {
 	var profiles []*models.Profile
-	err := r.Find(&profiles).Order("created_at desc").Error
+	err := r.Order("id desc").Find(&profiles).Error
 	return profiles, err
 }
 
