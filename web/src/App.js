@@ -31,9 +31,9 @@ function App() {
         if (!('repo' in metadata) || !('commit' in metadata)) return ''
         // display first 6 letter of commit hash
         return (<Box style={{display: "inline-flex"}}>
-            <b>commit: </b>
+            <b style={{marginRight: 5}}>commit:</b>
             <Link href={`${metadata.repo}/commit/${metadata.commit}`}
-                  target='_blank'>{" "}{metadata.commit.substring(0, 6)}</Link>
+                  target='_blank'>{metadata.commit.substring(0, 6)}</Link>
         </Box>)
     }
 
