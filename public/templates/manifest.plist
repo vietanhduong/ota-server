@@ -11,9 +11,7 @@
                         <key>kind</key>
                         <string>software-package</string>
                         <key>url</key>
-                        <string>
-                            {{index .ipa_path}}
-                        </string>
+                        <string>{{index .ipa_path}}</string>
                     </dict>
                 </array>
                 <key>metadata</key>
