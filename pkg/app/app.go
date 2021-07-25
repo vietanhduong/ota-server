@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"text/template"
 	"time"
 )
@@ -90,7 +91,6 @@ func (a *App) Initialize() {
 }
 
 func (a *App) Run(addr string) {
-	var wait time.Duration
 	// make sure you call  `Initialize` before run
 	server := &http.Server{
 		Addr:         addr,
@@ -107,24 +107,24 @@ func (a *App) Run(addr string) {
 		}
 	}()
 
-	c := make(chan os.Signal, 1)
-	// accept graceful shutdown when quit via SIGINT (ctrl+C)
-	// SIGKILL, SIGQUIT or SIGTERM (ctrl+/) will not be caught
-	signal.Notify(c, os.Interrupt)
+	// wait for interrupt signal to gracefully shutdown the server
+	// with a timeout of 10 seconds
+	quit := make(chan os.Signal, 1)
+	// kill (no param) default send SIGTERM
+	// kill -2 is SIGINT (ctrl+c)
+	// kill -9 is SIGKILL but can't be catch, so don't need add it
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	// block until receive signal
-	<-c
+	<-quit
 	// create a deadline wait for
-	ctx, cancel := context.WithTimeout(context.Background(), wait)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	// doesn't block if no connections, but will otherwise wait
 	// until the timeout deadline
 	if err := server.Shutdown(ctx); err != nil {
-		log.Printf("error when shutdown server with error: %+v", err)
-		return
+		log.Fatalf("error when shutdown server with error: %+v", err)
 	}
 	log.Println("shutting down")
-	os.Exit(0)
-
 }
 
 func (a *App) initializeRoutes() {
