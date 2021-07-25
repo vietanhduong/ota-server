@@ -13,7 +13,7 @@ import {
 import axios from 'axios';
 
 const client = axios.create({
-    baseURL: process.env.REACT_APP_API_V1,
+    baseURL: '/api/v1'
 });
 
 function App() {
@@ -65,7 +65,7 @@ function App() {
                                           }/>
                             <ListItemSecondaryAction>
                                 <Link
-                                    href={`itms-services://?action=download-manifest&amp;url=${process.env.REACT_APP_API_V1}/profiles/ios/${item.profile_id}/manifest.plist`}
+                                    href={`itms-services://?action=download-manifest&amp;url=${window.location.origin}/api/v1/profiles/ios/${item.profile_id}/manifest.plist`}
                                     target='_blank'
                                 >
                                     <Button disableElevation variant='contained' color='primary'
