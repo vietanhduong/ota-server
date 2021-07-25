@@ -19,11 +19,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o app .
 
 # deploy
 FROM debian:stretch
-
 RUN apt-get update && \
     apt install -y ca-certificates && \
     rm -rf /var/lib/apt/lists/*
-
 WORKDIR /cmd
 COPY --from=builder /src/app ./app
 COPY --from=web /usr/src/build ./web
