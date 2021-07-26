@@ -18,6 +18,8 @@ GCS_BUCKET=bucket-name # bucket name
 PORT=8081
 HOST=example.com # the application's host
 STATIC_PATH=/path/to/spa/build/folder
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token # use @BotFather to create new bot and get token
+TELEGRAM_GROUP_ID=your_group_id # https://stackoverflow.com/questions/33858927/how-to-obtain-the-chat-id-of-a-private-telegram-channel
 ```
 
 ### TODO
@@ -26,3 +28,4 @@ STATIC_PATH=/path/to/spa/build/folder
 - [x] Download IPA from GCS as a stream
 - [x] Build docker
 - [x] Integrate GitHub Actions
+- [x] Telegram Notification
