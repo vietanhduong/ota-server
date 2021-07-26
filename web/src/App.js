@@ -35,15 +35,15 @@ function App() {
         if (!('repo' in metadata) || (!('commit' in metadata) && !('pr_number' in metadata))) return "";
         // if `pr_number` is null => render commit hash
         if (!metadata.pr_number) {
-            return (<Box style={{display: "inline-flex"}}>
-                <b style={{margin: "0 5px"}}>commit:</b>
+            return (<span className={'metadata-attribute'}>
+                <b className={'mr5'}>commit:</b>
                 <Link href={`${metadata.repo}/commit/${metadata.commit}`}
                       target='_blank'>{metadata.commit.substring(0, 6)}</Link>
-            </Box>)
+            </span>)
         }
         // else render pr number
-        return (<span style={{display: "inline-flex"}}>
-            <b style={{margin: "0 5px"}}>pr:</b>
+        return (<span className={'metadata-attribute'}>
+            <b className={'mr5'}>pr:</b>
             <Link href={`${metadata.repo}/pull/${metadata.pr_number}`}
                   target='_blank'>#{metadata.pr_number}</Link>
         </span>)
@@ -81,9 +81,12 @@ function App() {
                             <ListItemText primary={`#${item.profile_id}: ${item.app_name}`}
                                           secondary={
                                               <>
-                                                  <span style={{display: "inline-flex"}}><b style={{marginRight: 5}}>version:</b> {item.version}</span>
-                                                  <span
-                                                      style={{display: "inline-flex"}}><b style={{margin: "0 5px"}}>build:</b> {item.build}</span>
+                                                  <span className={'metadata-attribute'}>
+                                                      <b className={'mr5'}>version:</b> {item.version}
+                                                  </span>
+                                                  <span className={'metadata-attribute'}>
+                                                      <b className={'mr5'}>build:</b> {item.build}
+                                                  </span>
                                                   {renderGitInfo(item.metadata)}
                                               </>
                                           }/>
