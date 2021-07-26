@@ -22,7 +22,7 @@ function App() {
     const fetchData = React.useCallback(() => {
         client.get('/profiles').then((response) => {
             setData(response.data || []);
-        });
+        }).catch(e => console.log(e));
     }, []);
 
     const renderGitCommit = (metadata) => {
@@ -36,6 +36,13 @@ function App() {
                   target='_blank'>{metadata.commit.substring(0, 6)}</Link>
         </Box>)
     }
+
+    const renderNoData = (d) => {
+        if (d.length > 0) return '';
+        return (<ListItem>
+            <ListItemText primary={'No data available'} style={{ textAlign: "center", fontStyle: "italic"}}/>
+        </ListItem>)
+    };
 
     React.useEffect(() => {
         fetchData();
@@ -54,6 +61,7 @@ function App() {
                     </ListItem>
                 </List>
                 <List disablePadding component={Paper}>
+                    {renderNoData(data)}
                     {data.map((item, index) => (
                         <ListItem key={item.profile_id} divider={index + 1 !== data.length} style={{paddingRight: 120}}>
                             <ListItemText primary={item.app_name}
