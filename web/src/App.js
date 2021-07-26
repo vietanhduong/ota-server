@@ -12,8 +12,12 @@ import {
 } from '@material-ui/core';
 import axios from 'axios';
 
+const getHost = () => {
+    return process.env.REACT_APP_HOST || window.location.origin;
+}
+
 const client = axios.create({
-    baseURL: '/api/v1'
+    baseURL: `${getHost()}/api/v1`
 });
 
 function App() {
@@ -25,22 +29,32 @@ function App() {
         }).catch(e => console.log(e));
     }, []);
 
-    const renderGitCommit = (metadata) => {
+    const renderGitInfo = (metadata) => {
         metadata = metadata || {}
-        // just ignore if metadata does not contain both `repo` and `commit` key
-        if (!('repo' in metadata) || !('commit' in metadata)) return ''
-        // display first 6 letter of commit hash
-        return (<Box style={{display: "inline-flex"}}>
-            <b style={{marginRight: 5}}>commit:</b>
-            <Link href={`${metadata.repo}/commit/${metadata.commit}`}
-                  target='_blank'>{metadata.commit.substring(0, 6)}</Link>
-        </Box>)
+        // just ignore if metadata does not contains `repo`, `commit` or `pr_number` key
+        if (!('repo' in metadata) || (!('commit' in metadata) && !('pr_number' in metadata))) return "";
+        // if `pr_number` is null => render commit hash
+        if (!metadata.pr_number) {
+            return (<Box style={{display: "inline-flex"}}>
+                <b style={{margin: "0 5px"}}>commit:</b>
+                <Link href={`${metadata.repo}/commit/${metadata.commit}`}
+                      target='_blank'>{metadata.commit.substring(0, 6)}</Link>
+            </Box>)
+        }
+        // else render pr number
+        return (<span style={{display: "inline-flex"}}>
+            <b style={{margin: "0 5px"}}>pr:</b>
+            <Link href={`${metadata.repo}/pull/${metadata.pr_number}`}
+                  target='_blank'>#{metadata.pr_number}</Link>
+        </span>)
+
     }
 
     const renderNoData = (d) => {
         if (d.length > 0) return '';
         return (<ListItem>
-            <ListItemText primary={'No data available'} style={{textAlign: "center", fontStyle: "italic", color: "gray"}}/>
+            <ListItemText primary={'No data available'}
+                          style={{textAlign: "center", fontStyle: "italic", color: "gray"}}/>
         </ListItem>)
     };
 
@@ -64,16 +78,18 @@ function App() {
                     {renderNoData(data)}
                     {data.map((item, index) => (
                         <ListItem key={item.profile_id} divider={index + 1 !== data.length} style={{paddingRight: 120}}>
-                            <ListItemText primary={item.app_name}
+                            <ListItemText primary={`#${item.profile_id}: ${item.app_name}`}
                                           secondary={
                                               <>
-                                                  <b>version:</b> {item.version} {' '}
-                                                  <b>build:</b> {item.build} {' '} {renderGitCommit(item.metadata)}
+                                                  <span style={{display: "inline-flex"}}><b style={{marginRight: 5}}>version:</b> {item.version}</span>
+                                                  <span
+                                                      style={{display: "inline-flex"}}><b style={{margin: "0 5px"}}>build:</b> {item.build}</span>
+                                                  {renderGitInfo(item.metadata)}
                                               </>
                                           }/>
                             <ListItemSecondaryAction>
                                 <Link
-                                    href={`itms-services://?action=download-manifest&amp;url=${window.location.origin}/api/v1/profiles/ios/${item.profile_id}/manifest.plist`}
+                                    href={`itms-services://?action=download-manifest&amp;url=${getHost()}/api/v1/profiles/ios/${item.profile_id}/manifest.plist`}
                                     target='_blank'
                                 >
                                     <Button disableElevation variant='contained' color='primary'
