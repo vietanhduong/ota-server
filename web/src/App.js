@@ -21,7 +21,7 @@ function App() {
 
     const fetchData = React.useCallback(() => {
         client.get('/profiles').then((response) => {
-            setData(response.data);
+            setData(response.data || []);
         });
     }, []);
 
