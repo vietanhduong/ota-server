@@ -40,7 +40,7 @@ function App() {
     const renderNoData = (d) => {
         if (d.length > 0) return '';
         return (<ListItem>
-            <ListItemText primary={'No data available'} style={{ textAlign: "center", fontStyle: "italic"}}/>
+            <ListItemText primary={'No data available'} style={{textAlign: "center", fontStyle: "italic"}}/>
         </ListItem>)
     };
 
@@ -52,15 +52,15 @@ function App() {
     return (
         <Box style={{}}>
             <Box style={{maxWidth: 680, margin: "0 auto"}}>
-                <List disablePadding component={Paper} style={{marginBottom: 10}}>
-                    <ListItem divider>
+                <List disablePadding component={Paper} style={{marginBottom: 10}} variant="outlined">
+                    <ListItem>
                         <ListItemText primary={<div style={{display: "flex", justifyContent: "start"}}>
                             <img alt="" style={{width: 30}} src={"apple-icon-57x57.png"}/>
                             <Typography variant='h5' style={{paddingTop: 3}}>Over-The-Air Server</Typography>
                         </div>}/>
                     </ListItem>
                 </List>
-                <List disablePadding component={Paper}>
+                <List disablePadding component={Paper} variant="outlined">
                     {renderNoData(data)}
                     {data.map((item, index) => (
                         <ListItem key={item.profile_id} divider={index + 1 !== data.length} style={{paddingRight: 120}}>
