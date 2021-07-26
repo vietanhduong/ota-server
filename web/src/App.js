@@ -40,7 +40,7 @@ function App() {
     const renderNoData = (d) => {
         if (d.length > 0) return '';
         return (<ListItem>
-            <ListItemText primary={'No data available'} style={{textAlign: "center", fontStyle: "italic"}}/>
+            <ListItemText primary={'No data available'} style={{textAlign: "center", fontStyle: "italic", color: "gray"}}/>
         </ListItem>)
     };
 
