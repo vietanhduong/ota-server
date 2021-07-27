@@ -81,7 +81,6 @@ func (r *register) download(ctx echo.Context) error {
 		return err
 	}
 
-	ctx.Response().Header().Set(echo.HeaderContentType, object.ContentType)
 	ctx.Response().Header().Set(echo.HeaderContentLength, fmt.Sprintf("%d", stream.Attrs.Size))
 	ctx.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", object.Filename))
 	// flush buffered data to the client
