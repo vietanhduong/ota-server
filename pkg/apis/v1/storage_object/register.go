@@ -84,5 +84,5 @@ func (r *register) download(ctx echo.Context) error {
 	ctx.Response().Header().Set(echo.HeaderContentLength, fmt.Sprintf("%d", stream.Attrs.Size))
 	ctx.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", object.Filename))
 	ctx.Response().Header().Del("Transfer-Encoding")
-	return ctx.Stream(http.StatusOK, echo.MIMEOctetStream, stream)
+	return ctx.Stream(http.StatusOK, object.ContentType, stream)
 }
