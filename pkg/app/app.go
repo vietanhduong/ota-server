@@ -9,6 +9,7 @@ import (
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/logger"
+	"github.com/vietanhduong/ota-server/pkg/middlewares"
 	"github.com/vietanhduong/ota-server/pkg/templates"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
 	"log"
@@ -30,11 +31,15 @@ func (a *App) Initialize() {
 
 	// configure server
 	a.Echo.Pre(middleware.RemoveTrailingSlash())
+	a.Echo.Use(middleware.Gzip())
+	a.Echo.Use(middleware.Recover())
 	a.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAcceptEncoding},
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut, http.MethodOptions, http.MethodPatch},
 	}))
+	// set default timeout
+	a.Echo.Use(middlewares.Timeout(3 * time.Minute))
 
 	// serve SPA
 	a.Echo.Use(middleware.StaticWithConfig(middleware.StaticConfig{
