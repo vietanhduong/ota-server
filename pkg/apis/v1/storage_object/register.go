@@ -1,7 +1,6 @@
 package storage_object
 
 import (
-	"bytes"
 	"cloud.google.com/go/storage"
 	"context"
 	"fmt"
@@ -9,7 +8,6 @@ import (
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/middlewares"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -84,14 +82,10 @@ func (r *register) download(ctx echo.Context) error {
 	}
 
 	ctx.Response().Header().Set(echo.HeaderContentType, object.ContentType)
-	ctx.Response().Header().Set("Accept-Ranges", "bytes")
 	ctx.Response().Header().Set(echo.HeaderContentLength, fmt.Sprintf("%d", stream.Attrs.Size))
 	ctx.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", object.Filename))
+	// flush buffered data to the client
+	ctx.Response().Flush()
 
-	ctx.Response().WriteHeader(http.StatusOK)
-
-	buf := bytes.NewBuffer(make([]byte, 0, stream.Attrs.Size))
-	_, err = io.Copy(ctx.Response(), io.TeeReader(stream, buf))
-
-	return err
+	return ctx.Stream(http.StatusOK, object.ContentType, stream)
 }
