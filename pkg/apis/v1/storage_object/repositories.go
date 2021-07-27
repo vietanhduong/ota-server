@@ -23,6 +23,7 @@ func NewRepository(db *database.DB) *repository {
 func (r *repository) Insert(uploadedFile *File) (*models.StorageObject, error) {
 	object := &models.StorageObject{
 		Name:        uploadedFile.Filename,
+		Key:         uploadedFile.Key,
 		Path:        uploadedFile.AbsPath,
 		ContentType: uploadedFile.ContentType,
 	}
@@ -34,6 +35,15 @@ func (r *repository) Insert(uploadedFile *File) (*models.StorageObject, error) {
 func (r *repository) FindById(objectId uint) (*models.StorageObject, error) {
 	var model *models.StorageObject
 	err := r.Where("id = ?", objectId).First(&model).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return model, err
+}
+
+func (r *repository) FindByKey(objectKey string) (*models.StorageObject, error) {
+	var model *models.StorageObject
+	err := r.First(&model, "`key` = ?", objectKey).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}

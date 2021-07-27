@@ -17,7 +17,7 @@ type ResponseProfile struct {
 	BundleIdentifier string            `json:"bundle_id"`
 	Version          string            `json:"version"`
 	Build            uint              `json:"build"`
-	StorageObjectID  uint              `json:"object_id"`
+	StorageObjectKey string            `json:"object_key"`
 	Metadata         map[string]string `json:"metadata"`
 }
 
@@ -29,6 +29,6 @@ func ToResponseProfile(model *models.Profile) *ResponseProfile {
 		BundleIdentifier: model.BundleIdentifier,
 		Version:          model.Version,
 		Build:            model.Build,
-		StorageObjectID:  model.StorageObjectID,
+		StorageObjectKey: model.StorageObject.Key,
 	}
 }

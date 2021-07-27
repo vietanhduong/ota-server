@@ -7,6 +7,7 @@ import (
 	"github.com/vietanhduong/ota-server/pkg/apis/v1/storage_object"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/database"
+	"github.com/vietanhduong/ota-server/pkg/database/models"
 	"github.com/vietanhduong/ota-server/pkg/logger"
 	"github.com/vietanhduong/ota-server/pkg/notifications/telegram"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
@@ -14,7 +15,7 @@ import (
 )
 
 type StorageService interface {
-	GetObject(objectId int) (*storage_object.File, error)
+	GetObjectById(objectId int) (*storage_object.File, error)
 }
 
 type MetadataService interface {
@@ -87,6 +88,14 @@ func (s *service) GetProfile(profileId int) (*ResponseProfile, error) {
 		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("profile does not exist"))
 	}
 
+	object, err := s.storageSvc.GetObjectById(int(model.StorageObjectID))
+	if err != nil {
+		return nil, err
+	}
+	model.StorageObject = models.StorageObject{
+		Key: object.Key,
+	}
+
 	profile := ToResponseProfile(model)
 	m, err := s.metadataSvc.GetMetadata(profileId)
 	if err != nil {
@@ -99,7 +108,7 @@ func (s *service) GetProfile(profileId int) (*ResponseProfile, error) {
 func (s *service) CreateProfile(reqProfile *RequestProfile) (*ResponseProfile, error) {
 	// TODO: update validate before insert to database
 	// validate storage object
-	_, err := s.storageSvc.GetObject(reqProfile.StorageObjectID)
+	_, err := s.storageSvc.GetObjectById(reqProfile.StorageObjectID)
 	if err != nil {
 		return nil, err
 	}

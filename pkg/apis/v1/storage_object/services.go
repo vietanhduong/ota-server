@@ -46,9 +46,12 @@ func (s *service) UploadToStorage(uploadedFile *File) (*ResponseObject, error) {
 	m := regexp.MustCompile("[^0-9a-zA-Z.]+")
 	uploadedFile.Filename = m.ReplaceAllLiteralString(uploadedFile.Filename, "_")
 
+	// generate object key
+	uploadedFile.Key = shortuuid.New()
+
 	// generate abs path
 	// 2006/01/02/Cekw67uyMpBGZLRP2HFVbe_build.ipa
-	uploadedFile.AbsPath = fmt.Sprintf("%s/%s_%s", time.Now().Format("2006/01/02"), shortuuid.New(), uploadedFile.Filename)
+	uploadedFile.AbsPath = fmt.Sprintf("%s/%s_%s", time.Now().Format("2006/01/02"), uploadedFile.Key, uploadedFile.Filename)
 
 	// upload to GCS
 	obj := &gcs.Object{
@@ -64,15 +67,36 @@ func (s *service) UploadToStorage(uploadedFile *File) (*ResponseObject, error) {
 	}
 
 	return &ResponseObject{
-		ObjectId: model.ID,
-		AbsPath:  uploadedFile.AbsPath,
-		Filename: model.Name,
+		ObjectId:  model.ID,
+		ObjectKey: model.Key,
+		AbsPath:   uploadedFile.AbsPath,
+		Filename:  model.Name,
 	}, nil
 }
 
-func (s *service) GetObject(objectId int) (*File, error) {
+func (s *service) GetObjectById(objectId int) (*File, error) {
 	// verify object id
 	object, err := s.repo.FindById(uint(objectId))
+	if err != nil {
+		return nil, err
+	}
+
+	if object == nil {
+		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
+	}
+	return &File{
+		Key:         object.Key,
+		Filename:    object.Name,
+		ContentType: object.ContentType,
+		AbsPath:     object.Path,
+		CreatedAt:   object.CreatedAt,
+		UpdatedAt:   object.UpdatedAt,
+	}, nil
+}
+
+func (s *service) GetObjectByKey(objectKey string) (*File, error) {
+	// verify object id
+	object, err := s.repo.FindByKey(objectKey)
 	if err != nil {
 		return nil, err
 	}
@@ -89,9 +113,9 @@ func (s *service) GetObject(objectId int) (*File, error) {
 	}, nil
 }
 
-func (s *service) DownloadObject(objectId int) (*File, error) {
+func (s *service) DownloadObject(objectKey string) (*File, error) {
 	// verify object id
-	object, err := s.repo.FindById(uint(objectId))
+	object, err := s.repo.FindByKey(objectKey)
 	if err != nil {
 		return nil, err
 	}
@@ -111,9 +135,9 @@ func (s *service) DownloadObject(objectId int) (*File, error) {
 	}, nil
 }
 
-func (s *service) DownloadObjectAsStream(ctx context.Context, objectId int) (*storage.Reader, error) {
+func (s *service) DownloadObjectAsStream(ctx context.Context, objectKey string) (*storage.Reader, error) {
 	// verify object id
-	object, err := s.repo.FindById(uint(objectId))
+	object, err := s.repo.FindByKey(objectKey)
 	if err != nil {
 		return nil, err
 	}

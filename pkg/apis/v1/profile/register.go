@@ -86,7 +86,7 @@ func (r *register) getManifest(ctx echo.Context) error {
 		"app_name":  profile.AppName,
 		"bundle_id": profile.BundleIdentifier,
 		// ipa_path could be download api
-		"ipa_path": fmt.Sprintf("%s/api/v1/storages/%d/download", Host, profile.StorageObjectID),
+		"ipa_path": fmt.Sprintf("%s/api/v1/storages/%s/download", Host, profile.StorageObjectKey),
 		"version":  profile.Version,
 	}
 	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationXML)

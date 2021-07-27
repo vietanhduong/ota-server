@@ -10,14 +10,12 @@ import (
 	"github.com/vietanhduong/ota-server/pkg/middlewares"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 )
 
 type StorageService interface {
 	UploadToStorage(uploadedFile *File) (*ResponseObject, error)
-	DownloadObject(objectId int) (*File, error)
-	GetObject(objectId int) (*File, error)
-	DownloadObjectAsStream(ctx context.Context, objectId int) (*storage.Reader, error)
+	GetObjectByKey(objectKey string) (*File, error)
+	DownloadObjectAsStream(ctx context.Context, objectKey string) (*storage.Reader, error)
 }
 type register struct {
 	storageSvc StorageService
@@ -29,7 +27,7 @@ func Register(g *echo.Group, db *database.DB) {
 	}
 
 	storageGroup := g.Group("/storages")
-	storageGroup.GET("/:id/download", res.download)
+	storageGroup.GET("/:key/download", res.download)
 	storageGroup.POST("/upload", res.upload, middlewares.BasicAuth)
 }
 
@@ -66,17 +64,17 @@ func (r *register) upload(ctx echo.Context) error {
 }
 
 func (r *register) download(ctx echo.Context) error {
-	reqObjId := ctx.Param("id")
-	objectId, err := strconv.Atoi(reqObjId)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid object id")
+	objectKey := ctx.Param("key")
+	if objectKey == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid object key")
 	}
-	object, err := r.storageSvc.GetObject(objectId)
+
+	object, err := r.storageSvc.GetObjectByKey(objectKey)
 	if err != nil {
 		return err
 	}
 
-	stream, err := r.storageSvc.DownloadObjectAsStream(ctx.Request().Context(), objectId)
+	stream, err := r.storageSvc.DownloadObjectAsStream(ctx.Request().Context(), objectKey)
 	if err != nil {
 		return err
 	}
