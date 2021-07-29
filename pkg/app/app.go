@@ -38,7 +38,7 @@ func (a *App) Initialize() {
 		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut, http.MethodOptions, http.MethodHead, http.MethodPatch},
 	}))
 	// set default timeout
-	a.Echo.Use(middlewares.Timeout(3 * time.Minute))
+	a.Echo.Use(middlewares.Timeout(10 * time.Minute))
 
 	// serve SPA
 	a.Echo.Use(middleware.StaticWithConfig(middleware.StaticConfig{
