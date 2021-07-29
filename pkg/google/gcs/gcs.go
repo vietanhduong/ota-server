@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/utils/file"
+	"google.golang.org/api/option"
 	"io"
 	"io/ioutil"
 )
@@ -32,7 +33,7 @@ func (g *GoogleStorage) UploadObject(ctx context.Context, obj *Object) error {
 	// upload an object with storage writer
 	src := bytes.NewReader(obj.Content)
 	// init gcs client
-	client, err := storage.NewClient(ctx)
+	client, err := storage.NewClient(ctx, option.WithCredentialsFile(g.credentialPath))
 	if err != nil {
 		return err
 	}
@@ -52,7 +53,7 @@ func (g *GoogleStorage) UploadObject(ctx context.Context, obj *Object) error {
 
 func (g *GoogleStorage) ReadObject(ctx context.Context, object string) ([]byte, error) {
 	// init gcs client
-	client, err := storage.NewClient(ctx)
+	client, err := storage.NewClient(ctx, option.WithCredentialsFile(g.credentialPath))
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +76,7 @@ func (g *GoogleStorage) ReadObject(ctx context.Context, object string) ([]byte, 
 
 func (g *GoogleStorage) ReadObjectAsStream(ctx context.Context, object string) (*storage.Reader, error) {
 	// init gcs client
-	client, err := storage.NewClient(ctx)
+	client, err := storage.NewClient(ctx, option.WithCredentialsFile(g.credentialPath))
 	if err != nil {
 		return nil, err
 	}
