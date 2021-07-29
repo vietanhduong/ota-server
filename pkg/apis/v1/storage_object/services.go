@@ -36,7 +36,7 @@ func NewService(db *database.DB) *service {
 	}
 }
 
-func (s *service) UploadToStorage(uploadedFile *File) (*ResponseObject, error) {
+func (s *service) UploadToStorage(ctx context.Context, uploadedFile *File) (*ResponseObject, error) {
 	// validate file extension
 	if err := ValidateExtension(uploadedFile.Filename); err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (s *service) UploadToStorage(uploadedFile *File) (*ResponseObject, error) {
 		Content:    uploadedFile.Content,
 		OutputPath: uploadedFile.AbsPath,
 	}
-	if err := s.storage.UploadObject(obj); err != nil {
+	if err := s.storage.UploadObject(ctx, obj); err != nil {
 		return nil, err
 	}
 	model, err := s.repo.Insert(uploadedFile)
@@ -113,7 +113,7 @@ func (s *service) GetObjectByKey(objectKey string) (*File, error) {
 	}, nil
 }
 
-func (s *service) DownloadObject(objectKey string) (*File, error) {
+func (s *service) DownloadObject(ctx context.Context, objectKey string) (*File, error) {
 	// verify object id
 	object, err := s.repo.FindByKey(objectKey)
 	if err != nil {
@@ -124,7 +124,7 @@ func (s *service) DownloadObject(objectKey string) (*File, error) {
 		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
 	}
 
-	content, err := s.storage.ReadObject(object.Path)
+	content, err := s.storage.ReadObject(ctx, object.Path)
 	if err != nil {
 		return nil, err
 	}
