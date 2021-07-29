@@ -3,13 +3,13 @@ package storage_object
 import (
 	"cloud.google.com/go/storage"
 	"context"
-	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/middlewares"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 type StorageService interface {
@@ -28,8 +28,8 @@ func Register(g *echo.Group, db *database.DB) {
 	}
 
 	storageGroup := g.Group("/storages")
-	storageGroup.GET("/:key/download", res.download)
-	storageGroup.HEAD("/:key/download", res.download)
+	storageGroup.GET("/:key/download/*", res.download)
+	storageGroup.HEAD("/:key/download/*", res.download)
 	storageGroup.POST("/upload", res.upload, middlewares.BasicAuth)
 }
 
@@ -81,12 +81,11 @@ func (r *register) download(ctx echo.Context) error {
 		return err
 	}
 	ctx.Response().Header().Set("Accept-Ranges", "bytes")
-	ctx.Response().Header().Set(echo.HeaderContentLength, fmt.Sprintf("%d", stream.Attrs.Size))
-	ctx.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", object.Filename))
-	ctx.Response().Header().Del("Transfer-Encoding")
+	ctx.Response().Header().Set(echo.HeaderContentLength, strconv.Itoa(int(stream.Attrs.Size)))
+	ctx.Response().Header().Set(echo.HeaderContentType, object.ContentType)
 
 	if ctx.Request().Method == http.MethodHead {
-		return ctx.NoContent(http.StatusNoContent)
+		return ctx.NoContent(http.StatusOK)
 	}
 
 	return ctx.Stream(http.StatusOK, object.ContentType, stream)

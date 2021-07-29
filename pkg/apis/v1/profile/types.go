@@ -12,13 +12,18 @@ type RequestProfile struct {
 }
 
 type ResponseProfile struct {
-	ProfileId        uint              `json:"profile_id"`
-	AppName          string            `json:"app_name"`
-	BundleIdentifier string            `json:"bundle_id"`
-	Version          string            `json:"version"`
-	Build            uint              `json:"build"`
-	StorageObjectKey string            `json:"object_key"`
-	Metadata         map[string]string `json:"metadata"`
+	ProfileId        uint                   `json:"profile_id"`
+	AppName          string                 `json:"app_name"`
+	BundleIdentifier string                 `json:"bundle_id"`
+	Version          string                 `json:"version"`
+	Build            uint                   `json:"build"`
+	Metadata         map[string]string      `json:"metadata"`
+	StorageObject    *StorageObjectResponse `json:"storage_object"`
+}
+
+type StorageObjectResponse struct {
+	ObjectKey string `json:"object_key"`
+	Filename  string `json:"filename"`
 }
 
 // ToResponseProfile convert profile model to profile response object
@@ -29,6 +34,9 @@ func ToResponseProfile(model *models.Profile) *ResponseProfile {
 		BundleIdentifier: model.BundleIdentifier,
 		Version:          model.Version,
 		Build:            model.Build,
-		StorageObjectKey: model.StorageObject.Key,
+		StorageObject: &StorageObjectResponse{
+			ObjectKey: model.StorageObject.Key,
+			Filename:  model.StorageObject.Name,
+		},
 	}
 }

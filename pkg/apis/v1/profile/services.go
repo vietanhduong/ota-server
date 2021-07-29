@@ -93,7 +93,8 @@ func (s *service) GetProfile(profileId int) (*ResponseProfile, error) {
 		return nil, err
 	}
 	model.StorageObject = models.StorageObject{
-		Key: object.Key,
+		Key:  object.Key,
+		Name: object.Filename,
 	}
 
 	profile := ToResponseProfile(model)
