@@ -72,17 +72,21 @@ func (r *register) download(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid object key")
 	}
 
+	if ctx.Request().Method == http.MethodHead {
+		object, err := r.storageSvc.GetObjectByKey(objectKey)
+		if err != nil {
+			return err
+		}
+		stream, err := r.storageSvc.DownloadObjectAsStream(ctx.Request().Context(), objectKey)
+		ctx.Response().Header().Set(echo.HeaderContentLength, fmt.Sprintf("%d", stream.Attrs.Size))
+		ctx.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", object.Filename))
+		ctx.Response().Header().Del("Transfer-Encoding")
+		return ctx.NoContent(http.StatusNoContent)
+	}
+
 	object, err := r.storageSvc.DownloadObject(objectKey)
 	if err != nil {
 		return err
 	}
-
-	ctx.Response().Header().Set(echo.HeaderContentLength, fmt.Sprintf("%d", len(object.Content)))
-	ctx.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", object.Filename))
-	ctx.Response().Header().Del("Transfer-Encoding")
-	if ctx.Request().Method == http.MethodHead {
-		return ctx.NoContent(http.StatusNoContent)
-	}
-
 	return ctx.Blob(http.StatusOK, object.ContentType, object.Content)
 }
