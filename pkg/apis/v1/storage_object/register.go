@@ -78,6 +78,9 @@ func (r *register) download(ctx echo.Context) error {
 			return err
 		}
 		stream, err := r.storageSvc.DownloadObjectAsStream(ctx.Request().Context(), objectKey)
+		if err != nil {
+			return err
+		}
 		ctx.Response().Header().Set(echo.HeaderContentLength, fmt.Sprintf("%d", stream.Attrs.Size))
 		ctx.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", object.Filename))
 		ctx.Response().Header().Del("Transfer-Encoding")
