@@ -6,10 +6,12 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/vietanhduong/ota-server/pkg/apis/v1/profile"
 	"github.com/vietanhduong/ota-server/pkg/apis/v1/storage_object"
+	"github.com/vietanhduong/ota-server/pkg/apis/v1/user"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
-	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/logger"
 	"github.com/vietanhduong/ota-server/pkg/middlewares"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
+	"github.com/vietanhduong/ota-server/pkg/redis"
 	"github.com/vietanhduong/ota-server/pkg/templates"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
 	"log"
@@ -22,8 +24,9 @@ import (
 )
 
 type App struct {
-	Echo *echo.Echo
-	DB   *database.DB
+	Echo  *echo.Echo
+	MySQL *mysql.DB
+	Redis *redis.Client
 }
 
 func (a *App) Initialize() {
@@ -69,7 +72,7 @@ func (a *App) Initialize() {
 	// initialize database connection
 	// make sure you have injected the database configuration
 	// into the environment
-	db, err := database.InitializeDatabase(database.Config{
+	db, err := mysql.InitializeDatabase(mysql.Config{
 		Username: env.GetEnvAsStringOrFallback("DB_USERNAME", ""),
 		Password: env.GetEnvAsStringOrFallback("DB_PASSWORD", ""),
 		Host:     env.GetEnvAsStringOrFallback("DB_HOST", ""),
@@ -77,14 +80,26 @@ func (a *App) Initialize() {
 		Instance: env.GetEnvAsStringOrFallback("DB_INSTANCE", ""),
 	})
 	if err != nil {
-		a.Echo.Logger.Fatalf("initialize database connection failed!\nErr: %+v", err)
+		a.Echo.Logger.Fatalf("initialize database connection failed with error: %+v", err)
 	}
 
-	a.DB = db
+	a.MySQL = db
+
+	// initialize redis connection
+	redisClient, err := redis.InitializeConnection(redis.Config{
+		Host: env.GetEnvAsStringOrFallback("REDIS_HOST", ""),
+		Port: env.GetEnvAsStringOrFallback("REDIS_PORT", ""),
+		DB:   env.GetEnvAsIntOrFallback("REDIS_DB", 0),
+	})
+	if err != nil {
+		a.Echo.Logger.Fatalf("initialize redis connection failed with error: %+v", err)
+	}
+
+	a.Redis = redisClient
 
 	// auto migrate database on startup
-	if autoMigrate, _ := env.GetEnvAsIntOrFallback("AUTO_MIGRATE", 0); autoMigrate == 1 {
-		if err := a.DB.Migration(); err != nil {
+	if autoMigrate := env.GetEnvAsIntOrFallback("AUTO_MIGRATE", 0); autoMigrate == 1 {
+		if err := a.MySQL.Migration(); err != nil {
 			a.Echo.Logger.Fatalf("migrate database was error %+v", err)
 		}
 	}
@@ -133,6 +148,7 @@ func (a *App) Run(addr string) {
 func (a *App) initializeRoutes() {
 	g := a.Echo.Group("/api/v1")
 
-	profile.Register(g, a.DB)
-	storage_object.Register(g, a.DB)
+	profile.Register(g, a.MySQL)
+	storage_object.Register(g, a.MySQL)
+	user.Register(g, a.MySQL, a.Redis)
 }

@@ -24,8 +24,9 @@ TELEGRAM_GROUP_ID=your_group_id # https://stackoverflow.com/questions/33858927/h
 
 ### TODO
 
-- [ ] Apply auth (Google)
+- [ ] ~~Apply auth (Google)~~
 - [x] Download IPA from GCS as a stream
 - [x] Build docker
 - [x] Integrate GitHub Actions
 - [x] Telegram Notification
+- [ ] Built-in Authentication

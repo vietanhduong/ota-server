@@ -1,55 +1,44 @@
-package auth
+package user
 
 import (
-	"context"
 	"github.com/labstack/echo/v4"
 	"github.com/vietanhduong/ota-server/pkg/mysql"
+	"github.com/vietanhduong/ota-server/pkg/redis"
 	"net/http"
-	"regexp"
-	"strings"
 )
 
 type Service interface {
-	Login(ctx context.Context, idToken string) (*Token, error)
+	Login(rl *RequestLogin) (*Token, error)
 }
 
 type register struct {
-	authSvc Service
+	userSvc Service
 }
 
-func Register(g *echo.Group, _ *mysql.DB) {
+func Register(g *echo.Group, db *mysql.DB, redis *redis.Client) {
 	res := register{
-		authSvc: NewService(),
+		userSvc: NewService(db, redis),
 	}
 
-	authGroup := g.Group("/auth")
+	authGroup := g.Group("/users")
 	authGroup.POST("/login", res.login)
 }
 
 func (r *register) login(ctx echo.Context) error {
-	authorizationHeader := ctx.Request().Header.Get("Authorization")
-	idToken := parseAuthorizationHeader(authorizationHeader)
-	if idToken == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "token invalid")
+	// parse request login
+	var rl *RequestLogin
+	if err := ctx.Bind(&rl); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	_, err := r.authSvc.Login(ctx.Request().Context(), idToken)
+	// validate request
+	if err := ValidateRequestLogin(rl); err != nil {
+		return err
+	}
+
+	token, err := r.userSvc.Login(rl)
 	if err != nil {
 		return err
 	}
-	return ctx.JSON(http.StatusOK, "ok")
-}
-
-func parseAuthorizationHeader(authorizationHeader string) string {
-	if authorizationHeader == "" {
-		return ""
-	}
-
-	var validToken = regexp.MustCompile(`^((?i)bearer|(?i)token)\s`)
-	if validToken.MatchString(authorizationHeader) {
-		token := validToken.ReplaceAllString(authorizationHeader, "")
-		return strings.Trim(token, "")
-	}
-	return ""
-
+	return ctx.JSON(http.StatusOK, token)
 }

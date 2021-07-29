@@ -3,8 +3,8 @@ package profile
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/middlewares"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
 	"net/http"
 	"strconv"
@@ -22,7 +22,7 @@ type register struct {
 	profileSvc Service
 }
 
-func Register(g *echo.Group, db *database.DB) {
+func Register(g *echo.Group, db *mysql.DB) {
 	res := register{
 		profileSvc: NewService(db),
 	}

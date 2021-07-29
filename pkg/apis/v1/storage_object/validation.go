@@ -1,7 +1,6 @@
 package storage_object
 
 import (
-	"errors"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"net/http"
 	"path/filepath"
@@ -16,5 +15,5 @@ func ValidateExtension(filename string) error {
 	if ext == IpaExt || ext == PlistExt {
 		return nil
 	}
-	return cerrors.NewCError(http.StatusBadRequest, errors.New("only 'plist' and 'ipa' extensions are accepted"))
+	return cerrors.NewCError(http.StatusBadRequest, "only 'plist' and 'ipa' extensions are accepted")
 }

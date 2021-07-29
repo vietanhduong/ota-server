@@ -2,9 +2,10 @@ package models
 
 import "gorm.io/gorm"
 
-type Metadata struct {
+type User struct {
 	*gorm.Model
-	ProfileId uint
-	Key       string `gorm:"index"`
-	Value     string
+	Email       string `gorm:"type:varchar(255);uniqueIndex;not null"`
+	Password    string `gorm:"type:varchar(255)"`
+	DisplayName string
+	Active      bool `gorm:"default:1"`
 }

@@ -1,12 +1,12 @@
 package metadata
 
 import (
-	"github.com/vietanhduong/ota-server/pkg/database"
-	"github.com/vietanhduong/ota-server/pkg/database/models"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
+	"github.com/vietanhduong/ota-server/pkg/mysql/models"
 )
 
 type repository struct {
-	*database.DB
+	*mysql.DB
 }
 
 type Repository interface {
@@ -16,7 +16,7 @@ type Repository interface {
 	FindByListProfileId(profileIds []uint) ([]*models.Metadata, error)
 }
 
-func NewRepository(db *database.DB) *repository {
+func NewRepository(db *mysql.DB) *repository {
 	return &repository{db}
 }
 

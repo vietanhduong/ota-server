@@ -5,8 +5,8 @@ import (
 	"context"
 	"github.com/labstack/echo/v4"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
-	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/middlewares"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -22,7 +22,7 @@ type register struct {
 	storageSvc StorageService
 }
 
-func Register(g *echo.Group, db *database.DB) {
+func Register(g *echo.Group, db *mysql.DB) {
 	res := register{
 		storageSvc: NewService(db),
 	}

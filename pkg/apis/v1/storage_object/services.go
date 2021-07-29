@@ -3,13 +3,12 @@ package storage_object
 import (
 	"cloud.google.com/go/storage"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/lithammer/shortuuid/v3"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
-	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/google/gcs"
 	"github.com/vietanhduong/ota-server/pkg/logger"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
 	"net/http"
 	"regexp"
@@ -21,7 +20,7 @@ type service struct {
 	storage *gcs.GoogleStorage
 }
 
-func NewService(db *database.DB) *service {
+func NewService(db *mysql.DB) *service {
 	googleCredentialsPath := env.GetEnvAsStringOrFallback("GOOGLE_CREDENTIALS", gcs.DefaultCredentialsPath)
 	gcsBucket := env.GetEnvAsStringOrFallback("GCS_BUCKET", gcs.DefaultBucketName)
 
@@ -82,7 +81,7 @@ func (s *service) GetObjectById(objectId int) (*File, error) {
 	}
 
 	if object == nil {
-		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
+		return nil, cerrors.NewCError(http.StatusNotFound, "object does not exist")
 	}
 	return &File{
 		Key:         object.Key,
@@ -102,7 +101,7 @@ func (s *service) GetObjectByKey(objectKey string) (*File, error) {
 	}
 
 	if object == nil {
-		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
+		return nil, cerrors.NewCError(http.StatusNotFound, "object does not exist")
 	}
 	return &File{
 		Filename:    object.Name,
@@ -121,7 +120,7 @@ func (s *service) DownloadObject(ctx context.Context, objectKey string) (*File, 
 	}
 
 	if object == nil {
-		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
+		return nil, cerrors.NewCError(http.StatusNotFound, "object does not exist")
 	}
 
 	content, err := s.storage.ReadObject(ctx, object.Path)
@@ -143,7 +142,7 @@ func (s *service) DownloadObjectAsStream(ctx context.Context, objectKey string) 
 	}
 
 	if object == nil {
-		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
+		return nil, cerrors.NewCError(http.StatusNotFound, "object does not exist")
 	}
 
 	stream, err := s.storage.ReadObjectAsStream(ctx, object.Path)

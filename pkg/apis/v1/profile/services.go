@@ -1,14 +1,13 @@
 package profile
 
 import (
-	"errors"
 	"fmt"
 	"github.com/vietanhduong/ota-server/pkg/apis/v1/metadata"
 	"github.com/vietanhduong/ota-server/pkg/apis/v1/storage_object"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
-	"github.com/vietanhduong/ota-server/pkg/database"
-	"github.com/vietanhduong/ota-server/pkg/database/models"
 	"github.com/vietanhduong/ota-server/pkg/logger"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
+	"github.com/vietanhduong/ota-server/pkg/mysql/models"
 	"github.com/vietanhduong/ota-server/pkg/notifications/telegram"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
 	"net/http"
@@ -31,7 +30,7 @@ type service struct {
 	metadataSvc MetadataService
 }
 
-func NewService(db *database.DB) *service {
+func NewService(db *mysql.DB) *service {
 	var _telegram *telegram.Telegram
 	telegramToken := env.GetEnvAsStringOrFallback("TELEGRAM_BOT_TOKEN", "")
 	telegramGroupId := env.GetEnvAsStringOrFallback("TELEGRAM_GROUP_ID", "")
@@ -85,7 +84,7 @@ func (s *service) GetProfile(profileId int) (*ResponseProfile, error) {
 		return nil, err
 	}
 	if model == nil {
-		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("profile does not exist"))
+		return nil, cerrors.NewCError(http.StatusNotFound, "profile does not exist")
 	}
 
 	object, err := s.storageSvc.GetObjectById(int(model.StorageObjectID))

@@ -1,14 +1,14 @@
 package metadata
 
 import (
-	"github.com/vietanhduong/ota-server/pkg/database"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
 )
 
 type service struct {
 	repo *repository
 }
 
-func NewService(db *database.DB) *service {
+func NewService(db *mysql.DB) *service {
 	return &service{
 		repo: NewRepository(db),
 	}

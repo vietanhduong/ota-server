@@ -12,4 +12,8 @@ type StorageObject struct {
 	Path string
 	// ContentType content-type
 	ContentType string
+	// UserID user id reference
+	UserID uint
+	// User user reference
+	User User
 }

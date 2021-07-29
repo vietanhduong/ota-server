@@ -2,13 +2,13 @@ package storage_object
 
 import (
 	"errors"
-	"github.com/vietanhduong/ota-server/pkg/database"
-	"github.com/vietanhduong/ota-server/pkg/database/models"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
+	"github.com/vietanhduong/ota-server/pkg/mysql/models"
 	"gorm.io/gorm"
 )
 
 type repository struct {
-	*database.DB
+	*mysql.DB
 }
 
 type Repository interface {
@@ -16,7 +16,7 @@ type Repository interface {
 	FindById(objectId uint) (*models.StorageObject, error)
 }
 
-func NewRepository(db *database.DB) *repository {
+func NewRepository(db *mysql.DB) *repository {
 	return &repository{db}
 }
 

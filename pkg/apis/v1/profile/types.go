@@ -1,6 +1,6 @@
 package profile
 
-import "github.com/vietanhduong/ota-server/pkg/database/models"
+import "github.com/vietanhduong/ota-server/pkg/mysql/models"
 
 type RequestProfile struct {
 	AppName          string            `json:"app_name"`

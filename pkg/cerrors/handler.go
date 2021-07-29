@@ -23,7 +23,7 @@ func HTTPErrorHandler(err error, ctx echo.Context) {
 
 	if ce, ok := err.(*CError); ok {
 		code = ce.Code
-		msg = ce.Error()
+		msg = ce.Err
 	}
 
 	response := &Response{

@@ -10,4 +10,6 @@ type Profile struct {
 	Build            uint
 	StorageObjectID  uint
 	StorageObject    StorageObject
+	UserID           uint
+	User             User
 }

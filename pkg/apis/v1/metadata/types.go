@@ -1,6 +1,6 @@
 package metadata
 
-import "github.com/vietanhduong/ota-server/pkg/database/models"
+import "github.com/vietanhduong/ota-server/pkg/mysql/models"
 
 type Metadata struct {
 	ProfileId int
