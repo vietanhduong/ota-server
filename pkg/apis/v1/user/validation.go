@@ -7,9 +7,15 @@ import (
 )
 
 func ValidateRequestLogin(rl *RequestLogin) error {
+	// validate request object
+	if rl == nil {
+		return cerrors.BadRequest("invalid request")
+	}
+	// validate input email
 	if err := ValidateRequiredField("email", rl.Email); err != nil {
 		return err
 	}
+	// validate input password
 	return ValidateRequiredField("password", rl.Password)
 }
 

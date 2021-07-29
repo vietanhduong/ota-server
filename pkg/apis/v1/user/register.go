@@ -5,6 +5,8 @@ import (
 	"github.com/vietanhduong/ota-server/pkg/mysql"
 	"github.com/vietanhduong/ota-server/pkg/redis"
 	"net/http"
+	"regexp"
+	"strings"
 )
 
 type Service interface {
@@ -26,9 +28,9 @@ func Register(g *echo.Group, db *mysql.DB, redis *redis.Client) {
 
 func (r *register) login(ctx echo.Context) error {
 	// parse request login
-	var rl *RequestLogin
-	if err := ctx.Bind(&rl); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	rl := new(RequestLogin)
+	if err := ctx.Bind(rl); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	// validate request
@@ -41,4 +43,26 @@ func (r *register) login(ctx echo.Context) error {
 		return err
 	}
 	return ctx.JSON(http.StatusOK, token)
+}
+
+func (r *register) refreshToken(ctx echo.Context) error {
+	// parse authorization header
+	authorization := ctx.Request().Header.Get("Authorization")
+	token := extractToken(authorization)
+	if token == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
+	}
+	return nil
+}
+
+func extractToken(authorization string) string {
+	if authorization == "" {
+		return ""
+	}
+	var validToken = regexp.MustCompile(`^((?i)bearer|(?i)token|(?i)jwt)\s`)
+	if validToken.MatchString(authorization) {
+		token := validToken.ReplaceAllString(authorization, "")
+		return strings.Trim(token, "")
+	}
+	return ""
 }

@@ -24,9 +24,9 @@ func (r *repository) FindById(userId uint) (*models.User, error) {
 	return model, err
 }
 
-func (r *repository) FindByEmail(email string) (*models.User, error) {
+func (r *repository) FindByEmail(email string, active bool) (*models.User, error) {
 	var model *models.User
-	err := r.Where("email = ?", email).First(&model).Error
+	err := r.Where("email = ? AND active = ?", email, active).First(&model).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}

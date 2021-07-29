@@ -33,13 +33,13 @@ func NewService(db *mysql.DB, redis *redis.Client) *service {
 }
 
 func (s *service) Login(rl *RequestLogin) (*Token, error) {
-	userModel, err := s.userRepo.FindByEmail(rl.Email)
+	userModel, err := s.userRepo.FindByEmail(rl.Email, true)
 	if err != nil {
 		return nil, errors.Wrap(err)
 	}
 
 	if userModel == nil {
-		return nil, cerrors.NotFound("userModel not found")
+		return nil, cerrors.NotFound("user not found")
 	}
 
 	if userModel.Password != crypto.NewSHA256([]byte(rl.Password)) {
@@ -52,6 +52,37 @@ func (s *service) Login(rl *RequestLogin) (*Token, error) {
 	}
 
 	return s.GenerateToken(user)
+}
+
+func (s *service) RefreshToken(refreshToken string) (*Token, error) {
+	userModel, err := s.userRepo.FindByEmail(email, true)
+	if err != nil {
+		return nil, errors.Wrap(err)
+	}
+
+	if userModel == nil {
+		return nil, cerrors.NotFound("user not found")
+	}
+
+	user := &User{
+		Email:       userModel.Email,
+		DisplayName: userModel.DisplayName,
+	}
+	// revoke old token and regenerate new access token
+	// and refresh token
+	return s.GenerateToken(user)
+}
+
+func (s *service) ParseToken(inputToken string) (*jwt.Token, error) {
+	token, err := jwt.ParseWithClaims(inputToken, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	})
+	if err != nil {
+		return nil, ProcessJwtError(err)
+	}
+
+	return token, nil
+
 }
 
 func (s *service) GenerateToken(user *User) (*Token, error) {
@@ -79,7 +110,7 @@ func (s *service) GenerateToken(user *User) (*Token, error) {
 	}
 
 	// save to redis
-	if err := s.redis.StoreWithTTL(jti, *token, RefreshTokenValidTime); err != nil {
+	if err := s.redis.StoreWithTTL(user.Email, *token, RefreshTokenValidTime); err != nil {
 		return nil, errors.Wrap(err)
 	}
 
@@ -130,4 +161,15 @@ func (s *service) GenerateJti() (string, error) {
 		return "", err
 	}
 	return base64.URLEncoding.EncodeToString(b), nil
+}
+
+func ProcessJwtError(err error) error {
+	validateErr, ok := err.(*jwt.ValidationError)
+	if !ok {
+		return err
+	}
+	if validateErr.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+		return cerrors.UnAuthorized("Chuỗi xác thực đã hết hạn")
+	}
+	return cerrors.UnAuthorized("Chuỗi xác thực không hợp lệ")
 }
