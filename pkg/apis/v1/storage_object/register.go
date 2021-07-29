@@ -28,6 +28,7 @@ func Register(g *echo.Group, db *database.DB) {
 
 	storageGroup := g.Group("/storages")
 	storageGroup.GET("/:key/download", res.download)
+	storageGroup.HEAD("/:key/download", res.download)
 	storageGroup.POST("/upload", res.upload, middlewares.BasicAuth)
 }
 
@@ -64,6 +65,7 @@ func (r *register) upload(ctx echo.Context) error {
 }
 
 func (r *register) download(ctx echo.Context) error {
+
 	objectKey := ctx.Param("key")
 	if objectKey == "" {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid object key")
@@ -82,5 +84,9 @@ func (r *register) download(ctx echo.Context) error {
 	ctx.Response().Header().Set(echo.HeaderContentLength, fmt.Sprintf("%d", stream.Attrs.Size))
 	ctx.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", object.Filename))
 	ctx.Response().Header().Del("Transfer-Encoding")
+	if ctx.Request().Method == http.MethodHead {
+		return ctx.NoContent(http.StatusNoContent)
+	}
+
 	return ctx.Stream(http.StatusOK, object.ContentType, stream)
 }
