@@ -28,7 +28,9 @@ func NewAuth(redis *redis.Client) *Auth {
 	}
 }
 
+// ParseToken parse and validate input token
 func (a *Auth) ParseToken(inputToken string) (*TokenClaims, error) {
+	// try to parse input token
 	token, err := jwt.ParseWithClaims(inputToken, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(a.secret), nil
 	})
@@ -36,6 +38,7 @@ func (a *Auth) ParseToken(inputToken string) (*TokenClaims, error) {
 		return nil, ProcessJwtError(err)
 	}
 
+	// verify token is revoked or not
 	if a.IsTokenRevoked(token) {
 		return nil, cerrors.UnAuthorized("token invalid")
 	}
@@ -43,6 +46,7 @@ func (a *Auth) ParseToken(inputToken string) (*TokenClaims, error) {
 	return token.Claims.(*TokenClaims), nil
 }
 
+// GenerateToken generate token
 func (a *Auth) GenerateToken(user *User) (*Token, error) {
 	// generate Jwt Token Id
 	jti, err := a.GenerateJti()
@@ -82,6 +86,7 @@ func (a *Auth) GenerateToken(user *User) (*Token, error) {
 	return token, nil
 }
 
+// GenerateAccessToken generate access token
 func (a *Auth) GenerateAccessToken(user *User, jti string) (string, error) {
 	now := time.Now()
 	accessTokenExp := now.Add(AccessTokenValidTime).Unix()
@@ -100,6 +105,7 @@ func (a *Auth) GenerateAccessToken(user *User, jti string) (string, error) {
 	return token, err
 }
 
+// GenerateRefreshToken generate refresh token
 func (a *Auth) GenerateRefreshToken(user *User, jti string) (string, error) {
 	now := time.Now()
 	refreshTokenExp := now.Add(RefreshTokenValidTime).Unix()
@@ -118,6 +124,7 @@ func (a *Auth) GenerateRefreshToken(user *User, jti string) (string, error) {
 	return token, err
 }
 
+// GenerateJti generate jwt token id
 func (a *Auth) GenerateJti() (string, error) {
 	var length = 64
 	b := make([]byte, length)
@@ -128,12 +135,14 @@ func (a *Auth) GenerateJti() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
+// IsTokenRevoked check token is revoked or not
 func (a *Auth) IsTokenRevoked(token *jwt.Token) bool {
 	claims := token.Claims.(*TokenClaims)
 	result := a.redis.Exists(claims.User.Email).Val()
 	return result == 0
 }
 
+// RevokeToken remove token from redis
 func (a *Auth) RevokeToken(email string) error {
 	// if email does not exist in redis
 	// stop revoke token
@@ -159,6 +168,7 @@ func (a *Auth) RevokeToken(email string) error {
 	return nil
 }
 
+// ExtractToken extract token request header
 func (a *Auth) ExtractToken(authorization string) string {
 	if authorization == "" {
 		return ""
@@ -171,6 +181,8 @@ func (a *Auth) ExtractToken(authorization string) string {
 	return ""
 }
 
+// GetClaimsInContext get claim was stored in context
+// when user logged in
 func (a *Auth) GetClaimsInContext(ctx echo.Context) *TokenClaims {
 	jwtToken := ctx.Get(CtxKey)
 	if jwtToken != nil {
@@ -179,6 +191,9 @@ func (a *Auth) GetClaimsInContext(ctx echo.Context) *TokenClaims {
 	return nil
 }
 
+// GenerateExchangeCode generate exchange code by using nanoid
+// after generated exchange code will be stored in redis
+// format exchange code should be: exchange_<code>
 func (a *Auth) GenerateExchangeCode() (string, error) {
 	var base = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	var defaultLength = 28
@@ -194,10 +209,14 @@ func (a *Auth) GenerateExchangeCode() (string, error) {
 	return code, nil
 }
 
+// IsExchangeCodeExist verify file exchange code is existed in redis
 func (a *Auth) IsExchangeCodeExist(code string) bool {
 	return a.redis.Exists(fmt.Sprint("exchange_", code)).Val() == 1
 }
 
+// RevokeExchangeCode revoke exchange code stored in redis
+// by remove key in redis
+// format key: exchange_<code>
 func (a *Auth) RevokeExchangeCode(code string) error {
 	if code == "" {
 		return nil
@@ -209,6 +228,9 @@ func (a *Auth) RevokeExchangeCode(code string) error {
 	return a.redis.Del(fmt.Sprint("exchange_", code)).Err()
 }
 
+// RequiredLogin middleware function
+// this function required token in header
+// accept prefix jwt, bearer, token
 func (a *Auth) RequiredLogin() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
@@ -233,14 +255,17 @@ func (a *Auth) RequiredLogin() echo.MiddlewareFunc {
 	}
 }
 
+// RequiredExchangeCode middleware function
+// this function required code in query param
 func (a *Auth) RequiredExchangeCode() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
+			// get code form query param
 			code := ctx.QueryParam("code")
 			if code == "" {
 				return cerrors.UnAuthorized("missing exchange code")
 			}
-
+			// verify exist in redis
 			if !a.IsExchangeCodeExist(code) {
 				return cerrors.UnAuthorized("exchange code invalid")
 			}
