@@ -35,6 +35,7 @@ func (a *App) Initialize() {
 	// configure server
 	a.Echo.Pre(middleware.RemoveTrailingSlash())
 	a.Echo.Use(middleware.Recover())
+	a.Echo.Use(middleware.RequestID())
 	a.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAcceptEncoding},
