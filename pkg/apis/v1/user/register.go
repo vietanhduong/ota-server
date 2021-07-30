@@ -11,18 +11,19 @@ import (
 )
 
 type Service interface {
-	Login(rl *RequestLogin) (*auth.Token, error)
-	RefreshToken(refreshToken string) (*auth.Token, error)
-	Logout(accessToken string) error
+	Login(rl *RequestLogin) (*User, error)
+	GetUserInfo(email string) (*User, error)
 }
 
 type register struct {
 	userSvc Service
+	auth    *auth.Auth
 }
 
 func Register(g *echo.Group, db *mysql.DB, redis *redis.Client) {
 	res := register{
-		userSvc: NewService(db, redis),
+		userSvc: NewService(db),
+		auth:    auth.NewAuth(redis),
 	}
 
 	authGroup := g.Group("/users")
@@ -43,10 +44,21 @@ func (r *register) login(ctx echo.Context) error {
 		return err
 	}
 
-	token, err := r.userSvc.Login(rl)
+	user, err := r.userSvc.Login(rl)
 	if err != nil {
 		return err
 	}
+
+	authUser := &auth.User{
+		Email:       user.Email,
+		DisplayName: user.DisplayName,
+	}
+
+	token, err := r.auth.GenerateToken(authUser)
+	if err != nil {
+		return err
+	}
+
 	return ctx.JSON(http.StatusOK, token)
 }
 
@@ -57,8 +69,34 @@ func (r *register) refreshToken(ctx echo.Context) error {
 	if refreshToken == "" {
 		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
 	}
+	// parse refresh token
+	claims, err := r.auth.ParseToken(refreshToken)
+	if err != nil {
+		return err
+	}
+	// just accept with token has type is `refresh`
+	if claims.TokenType != auth.Refresh {
+		return echo.NewHTTPError(http.StatusUnauthorized, "token invalid")
+	}
+	// find user by email to make sure user still active
+	user, err := r.userSvc.GetUserInfo(claims.User.Email)
+	if err != nil {
+		return err
+	}
+	// if user not found, to be sure I have to
+	// revoke the token
+	if user == nil {
+		_ = r.auth.RevokeToken(claims.User.Email)
+		return echo.NewHTTPError(http.StatusNotFound, "user not found")
+	}
 
-	token, err := r.userSvc.RefreshToken(refreshToken)
+	authUser := &auth.User{
+		Email:       user.Email,
+		DisplayName: user.DisplayName,
+	}
+	// revoke both access token and refresh token,
+	// and regenerate
+	token, err := r.auth.GenerateToken(authUser)
 	if err != nil {
 		return err
 	}
@@ -74,7 +112,16 @@ func (r *register) logout(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
 	}
 
-	if err := r.userSvc.Logout(accessToken); err != nil {
+	claims, err := r.auth.ParseToken(accessToken)
+	if err != nil {
+		return err
+	}
+
+	if claims.TokenType != auth.Access {
+		return echo.NewHTTPError(http.StatusUnauthorized, "token invalid")
+	}
+
+	if err := r.auth.RevokeToken(claims.User.Email); err != nil {
 		return err
 	}
 
