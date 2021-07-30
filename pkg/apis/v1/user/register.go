@@ -25,7 +25,7 @@ func Register(g *echo.Group, db *mysql.DB, redis *redis.Client) {
 	}
 
 	authGroup := g.Group("/users")
-	authGroup.GET("/me", reg.me)
+	authGroup.GET("/me", reg.me, reg.auth.RequiredLogin())
 	authGroup.POST("/login", reg.login)
 	authGroup.POST("/refresh-token", reg.refreshToken)
 	authGroup.POST("/logout", reg.logout)
