@@ -4,9 +4,10 @@ import (
 	"cloud.google.com/go/storage"
 	"context"
 	"github.com/labstack/echo/v4"
+	"github.com/vietanhduong/ota-server/pkg/auth"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
-	"github.com/vietanhduong/ota-server/pkg/middlewares"
 	"github.com/vietanhduong/ota-server/pkg/mysql"
+	"github.com/vietanhduong/ota-server/pkg/redis"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -20,17 +21,19 @@ type StorageService interface {
 }
 type register struct {
 	storageSvc StorageService
+	auth       *auth.Auth
 }
 
-func Register(g *echo.Group, db *mysql.DB) {
-	res := register{
+func Register(g *echo.Group, db *mysql.DB, redis *redis.Client) {
+	reg := register{
 		storageSvc: NewService(db),
+		auth:       auth.NewAuth(redis),
 	}
 
 	storageGroup := g.Group("/storages")
-	storageGroup.GET("/:key/download/*", res.download)
-	storageGroup.HEAD("/:key/download/*", res.download)
-	storageGroup.POST("/upload", res.upload, middlewares.BasicAuth)
+	storageGroup.GET("/:key/download/*", reg.download, reg.auth.RequiredExchangeCode())
+	storageGroup.HEAD("/:key/download/*", reg.download, reg.auth.RequiredExchangeCode())
+	storageGroup.POST("/upload", reg.upload, reg.auth.RequiredLogin())
 }
 
 func (r *register) upload(ctx echo.Context) error {

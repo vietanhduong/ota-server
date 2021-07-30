@@ -3,8 +3,9 @@ package profile
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/vietanhduong/ota-server/pkg/middlewares"
+	"github.com/vietanhduong/ota-server/pkg/auth"
 	"github.com/vietanhduong/ota-server/pkg/mysql"
+	"github.com/vietanhduong/ota-server/pkg/redis"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
 	"net/http"
 	"strconv"
@@ -20,18 +21,20 @@ type Service interface {
 
 type register struct {
 	profileSvc Service
+	auth *auth.Auth
 }
 
-func Register(g *echo.Group, db *mysql.DB) {
-	res := register{
+func Register(g *echo.Group, db *mysql.DB, redis *redis.Client) {
+	reg := register{
 		profileSvc: NewService(db),
+		auth: auth.NewAuth(redis),
 	}
 	profileGroup := g.Group("/profiles")
 
-	profileGroup.GET("", res.home)
-	profileGroup.POST("/ios", res.createProfile, middlewares.BasicAuth)
-	profileGroup.GET("/ios/:id", res.getProfile)
-	profileGroup.GET("/ios/:id/manifest.plist", res.getManifest)
+	profileGroup.GET("", reg.home, reg.auth.RequiredLogin())
+	profileGroup.POST("/ios", reg.createProfile, reg.auth.RequiredLogin())
+	profileGroup.GET("/ios/:id", reg.getProfile, reg.auth.RequiredLogin())
+	profileGroup.GET("/ios/:id/manifest.plist", reg.getManifest, reg.auth.RequiredExchangeCode())
 }
 
 func (r *register) home(ctx echo.Context) error {

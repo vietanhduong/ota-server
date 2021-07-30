@@ -5,6 +5,7 @@ import "github.com/dgrijalva/jwt-go"
 type Token struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+	ExchangeCode string `json:"exchange_code"`
 }
 
 type User struct {

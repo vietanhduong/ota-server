@@ -9,6 +9,7 @@ require (
 	github.com/labstack/echo/v4 v4.4.0
 	github.com/labstack/gommon v0.3.0
 	github.com/lithammer/shortuuid/v3 v3.0.7
+	github.com/matoous/go-nanoid v1.5.0
 	github.com/onsi/gomega v1.14.0 // indirect
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6
 	google.golang.org/api v0.51.0

@@ -150,7 +150,7 @@ func (a *App) Run(addr string) {
 func (a *App) initializeRoutes() {
 	g := a.Echo.Group("/api/v1")
 
-	profile.Register(g, a.MySQL)
-	storage_object.Register(g, a.MySQL)
+	profile.Register(g, a.MySQL, a.Redis)
+	storage_object.Register(g, a.MySQL, a.Redis)
 	user.Register(g, a.MySQL, a.Redis)
 }
