@@ -2,6 +2,7 @@ package user
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/vietanhduong/ota-server/pkg/auth"
 	"github.com/vietanhduong/ota-server/pkg/mysql"
 	"github.com/vietanhduong/ota-server/pkg/redis"
 	"net/http"
@@ -10,7 +11,8 @@ import (
 )
 
 type Service interface {
-	Login(rl *RequestLogin) (*Token, error)
+	Login(rl *RequestLogin) (*auth.Token, error)
+	RefreshToken(refreshToken string) (*auth.Token, error)
 }
 
 type register struct {
@@ -48,11 +50,17 @@ func (r *register) login(ctx echo.Context) error {
 func (r *register) refreshToken(ctx echo.Context) error {
 	// parse authorization header
 	authorization := ctx.Request().Header.Get("Authorization")
-	token := extractToken(authorization)
-	if token == "" {
+	refreshToken := extractToken(authorization)
+	if refreshToken == "" {
 		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
 	}
-	return nil
+
+	token, err := r.userSvc.RefreshToken(refreshToken)
+	if err != nil {
+		return err
+	}
+
+	return ctx.JSON(http.StatusOK, token)
 }
 
 func extractToken(authorization string) string {
