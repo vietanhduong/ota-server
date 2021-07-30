@@ -126,3 +126,10 @@ func (a *Auth) IsTokenRevoked(token *jwt.Token) bool {
 	result := a.redis.Exists(claims.User.Email).Val()
 	return result == 0
 }
+
+func (a *Auth) RevokeToken(email string) error {
+	if a.redis.Exists(email).Val() == 1 {
+		return a.redis.Del(email).Err()
+	}
+	return nil
+}

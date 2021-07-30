@@ -13,6 +13,7 @@ import (
 type Service interface {
 	Login(rl *RequestLogin) (*auth.Token, error)
 	RefreshToken(refreshToken string) (*auth.Token, error)
+	Logout(accessToken string) error
 }
 
 type register struct {
@@ -26,6 +27,8 @@ func Register(g *echo.Group, db *mysql.DB, redis *redis.Client) {
 
 	authGroup := g.Group("/users")
 	authGroup.POST("/login", res.login)
+	authGroup.POST("/refresh-token", res.refreshToken)
+	authGroup.POST("/logout", res.logout)
 }
 
 func (r *register) login(ctx echo.Context) error {
@@ -61,6 +64,21 @@ func (r *register) refreshToken(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, token)
+}
+
+func (r *register) logout(ctx echo.Context) error {
+	// parse authorization header
+	authorization := ctx.Request().Header.Get("Authorization")
+	accessToken := extractToken(authorization)
+	if accessToken == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
+	}
+
+	if err := r.userSvc.Logout(accessToken); err != nil {
+		return err
+	}
+
+	return ctx.NoContent(http.StatusNoContent)
 }
 
 func extractToken(authorization string) string {

@@ -44,22 +44,26 @@ func (s *service) Login(rl *RequestLogin) (*auth.Token, error) {
 }
 
 func (s *service) RefreshToken(refreshToken string) (*auth.Token, error) {
-
+	// parse refresh token to token claims
 	token, err := s.auth.ParseToken(refreshToken)
 	if err != nil {
 		return nil, errors.Wrap(err)
 	}
-
+	// just accept with token has type is refresh
 	if token.TokenType != auth.Refresh {
 		return nil, cerrors.UnAuthorized("token invalid")
 	}
-
+	// make sure user is active
 	userModel, err := s.userRepo.FindByEmail(token.User.Email, true)
 	if err != nil {
 		return nil, errors.Wrap(err)
 	}
 
+	// if user does not exist, to be sure we have to
+	// revoke the token
 	if userModel == nil {
+		// revoke token if user does not exist
+		_ = s.auth.RevokeToken(token.User.Email)
 		return nil, cerrors.NotFound("user not found")
 	}
 
@@ -70,4 +74,17 @@ func (s *service) RefreshToken(refreshToken string) (*auth.Token, error) {
 	// revoke old token and regenerate new access token
 	// and refresh token
 	return s.auth.GenerateToken(user)
+}
+
+func (s *service) Logout(accessToken string) error {
+	token, err := s.auth.ParseToken(accessToken)
+	if err != nil {
+		return errors.Wrap(err)
+	}
+
+	if token.TokenType != auth.Access {
+		return cerrors.UnAuthorized("token invalid")
+	}
+
+	return s.auth.RevokeToken(token.User.Email)
 }
