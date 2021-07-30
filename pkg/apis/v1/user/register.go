@@ -6,8 +6,6 @@ import (
 	"github.com/vietanhduong/ota-server/pkg/mysql"
 	"github.com/vietanhduong/ota-server/pkg/redis"
 	"net/http"
-	"regexp"
-	"strings"
 )
 
 type Service interface {
@@ -21,15 +19,36 @@ type register struct {
 }
 
 func Register(g *echo.Group, db *mysql.DB, redis *redis.Client) {
-	res := register{
+	reg := register{
 		userSvc: NewService(db),
 		auth:    auth.NewAuth(redis),
 	}
 
 	authGroup := g.Group("/users")
-	authGroup.POST("/login", res.login)
-	authGroup.POST("/refresh-token", res.refreshToken)
-	authGroup.POST("/logout", res.logout)
+	authGroup.GET("/me", reg.me)
+	authGroup.POST("/login", reg.login)
+	authGroup.POST("/refresh-token", reg.refreshToken)
+	authGroup.POST("/logout", reg.logout)
+}
+
+func (r *register) me(ctx echo.Context) error {
+	// get claims in context
+	claims := r.auth.GetClaimsInContext(ctx)
+	if claims == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
+	}
+	// find user by email
+	user, err := r.userSvc.GetUserInfo(claims.User.Email)
+	if err != nil {
+		return err
+	}
+	// revoke token if user not found
+	if user == nil {
+		_ = r.auth.RevokeToken(claims.User.Email)
+		return echo.NewHTTPError(http.StatusNotFound, "user not found")
+	}
+
+	return ctx.JSON(http.StatusOK, user)
 }
 
 func (r *register) login(ctx echo.Context) error {
@@ -65,7 +84,7 @@ func (r *register) login(ctx echo.Context) error {
 func (r *register) refreshToken(ctx echo.Context) error {
 	// parse authorization header
 	authorization := ctx.Request().Header.Get("Authorization")
-	refreshToken := extractToken(authorization)
+	refreshToken := r.auth.ExtractToken(authorization)
 	if refreshToken == "" {
 		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
 	}
@@ -107,7 +126,7 @@ func (r *register) refreshToken(ctx echo.Context) error {
 func (r *register) logout(ctx echo.Context) error {
 	// parse authorization header
 	authorization := ctx.Request().Header.Get("Authorization")
-	accessToken := extractToken(authorization)
+	accessToken := r.auth.ExtractToken(authorization)
 	if accessToken == "" {
 		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
 	}
@@ -126,16 +145,4 @@ func (r *register) logout(ctx echo.Context) error {
 	}
 
 	return ctx.NoContent(http.StatusNoContent)
-}
-
-func extractToken(authorization string) string {
-	if authorization == "" {
-		return ""
-	}
-	var validToken = regexp.MustCompile(`^((?i)bearer|(?i)token|(?i)jwt)\s`)
-	if validToken.MatchString(authorization) {
-		token := validToken.ReplaceAllString(authorization, "")
-		return strings.Trim(token, "")
-	}
-	return ""
 }

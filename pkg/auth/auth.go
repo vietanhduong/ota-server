@@ -3,11 +3,14 @@ package auth
 import (
 	"encoding/base64"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/labstack/echo/v4"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/redis"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
 	"golang.org/x/exp/rand"
 	"gopkg.in/errgo.v2/errors"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -15,6 +18,7 @@ const RefreshTokenValidTime = 12 * time.Hour
 const AccessTokenValidTime = time.Hour
 const Refresh = "refresh"
 const Access = "access"
+const CtxKey = "auth"
 
 type Auth struct {
 	redis  *redis.Client
@@ -130,6 +134,50 @@ func (a *Auth) IsTokenRevoked(token *jwt.Token) bool {
 func (a *Auth) RevokeToken(email string) error {
 	if a.redis.Exists(email).Val() == 1 {
 		return a.redis.Del(email).Err()
+	}
+	return nil
+}
+
+func (a *Auth) ExtractToken(authorization string) string {
+	if authorization == "" {
+		return ""
+	}
+	var validToken = regexp.MustCompile(`^((?i)bearer|(?i)token|(?i)jwt)\s`)
+	if validToken.MatchString(authorization) {
+		token := validToken.ReplaceAllString(authorization, "")
+		return strings.Trim(token, "")
+	}
+	return ""
+}
+
+func (a *Auth) RequiredLogin() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			// extract access token from request header
+			token := a.ExtractToken(ctx.Request().Header.Get("Authorization"))
+			if token == "" {
+				return cerrors.UnAuthorized("unauthorized")
+			}
+			// parse to claims
+			claims, err := a.ParseToken(token)
+			if err != nil {
+				return errors.Wrap(err)
+			}
+			// just access with token has type is `access`
+			if claims.TokenType != Access {
+				return cerrors.UnAuthorized("token invalid")
+			}
+			// set claims into context
+			ctx.Set(CtxKey, claims)
+			return next(ctx)
+		}
+	}
+}
+
+func (a *Auth) GetClaimsInContext(ctx echo.Context) *TokenClaims {
+	jwtToken := ctx.Get(CtxKey)
+	if jwtToken != nil {
+		return ctx.Get(CtxKey).(*TokenClaims)
 	}
 	return nil
 }
