@@ -74,6 +74,8 @@ func (r *register) getProfile(ctx echo.Context) error {
 }
 
 func (r *register) getManifest(ctx echo.Context) error {
+	code := ctx.QueryParam("code")
+
 	reqProfileId := ctx.Param("id")
 	profileId, err := strconv.Atoi(reqProfileId)
 	if err != nil {
@@ -89,7 +91,7 @@ func (r *register) getManifest(ctx echo.Context) error {
 		"app_name":  profile.AppName,
 		"bundle_id": profile.BundleIdentifier,
 		// ipa_path could be download api
-		"ipa_path": fmt.Sprintf("%s/api/v1/storages/%s/download/%s", Host, profile.StorageObject.ObjectKey, profile.StorageObject.Filename),
+		"ipa_path": fmt.Sprintf("%s/api/v1/storages/%s/download/%s?code=%s", Host, profile.StorageObject.ObjectKey, profile.StorageObject.Filename, code),
 		"version":  profile.Version,
 	}
 	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationXML)
