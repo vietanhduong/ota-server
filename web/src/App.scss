@@ -1,0 +1,41 @@
+body {
+  background-color: #f0f0f0;
+  margin: 0px;
+  padding: 0px;
+}
+
+* {
+  outline: none !important;
+}
+
+b {
+  font-weight: 500;
+}
+
+.mlr5 {
+  margin: 0 5px;
+}
+
+.mr5 {
+  margin-right: 5px;
+}
+
+.metadata-attribute {
+  display: inline-flex;
+  margin-right: 5px;
+}
+
+.App {
+  min-height: 100vh;
+}
+
+.Auth-Layout {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+}
+
+.Private-Layout {
+  padding: 6px;
+}
