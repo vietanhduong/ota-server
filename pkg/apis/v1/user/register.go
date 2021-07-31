@@ -3,6 +3,7 @@ package user
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/vietanhduong/ota-server/pkg/auth"
+	"github.com/vietanhduong/ota-server/pkg/logger"
 	"github.com/vietanhduong/ota-server/pkg/mysql"
 	"github.com/vietanhduong/ota-server/pkg/redis"
 	"net/http"
@@ -44,7 +45,20 @@ func (r *register) me(ctx echo.Context) error {
 	}
 	// revoke token if user not found
 	if user == nil {
-		_ = r.auth.RevokeToken(claims.User.Email)
+
+		go func(jti string) {
+			// get token object from redis
+			token, err := r.auth.GetToken(jti)
+			if err != nil {
+				logger.Logger.Errorf("get token failed with error: %+v", err)
+				return
+			}
+			// revoke token
+			if err := r.auth.RevokeToken(token.AccessToken); err != nil {
+				logger.Logger.Error("revoke token failed with error: %+v", err)
+			}
+		}(claims.Id)
+
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
 
@@ -103,7 +117,6 @@ func (r *register) refreshToken(ctx echo.Context) error {
 		return err
 	}
 
-
 	// get old token
 	oldToken, err := r.auth.GetToken(claims.Id)
 	if err != nil {
@@ -116,7 +129,6 @@ func (r *register) refreshToken(ctx echo.Context) error {
 		_ = r.auth.RevokeToken(oldToken.AccessToken)
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
 	}
-
 
 	// revoke old token
 	if err := r.auth.RevokeToken(oldToken.AccessToken); err != nil {
@@ -144,16 +156,19 @@ func (r *register) logout(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
 	}
 
+	// parse input access token
 	claims, err := r.auth.ParseToken(accessToken)
 	if err != nil {
 		return err
 	}
 
+	// just accept with token has type is `access`
 	if claims.TokenType != auth.Access {
 		return echo.NewHTTPError(http.StatusUnauthorized, "token invalid")
 	}
 
-	if err := r.auth.RevokeToken(claims.User.Email); err != nil {
+	// revoke token
+	if err := r.auth.RevokeToken(accessToken); err != nil {
 		return err
 	}
 
