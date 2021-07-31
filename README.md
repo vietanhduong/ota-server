@@ -26,6 +26,7 @@ GCS_BUCKET=bucket-name # bucket name
 PORT=8081
 HOST=example.com # the application's host
 STATIC_PATH=/path/to/spa/build/folder
+SECRET=your-secret
 
 # notification config variables
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token # use @BotFather to create new bot and get token
