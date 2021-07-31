@@ -102,19 +102,32 @@ func (r *register) refreshToken(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+
+	// get old token
+	oldToken, err := r.auth.GetToken(claims.Id)
+	if err != nil {
+		return err
+	}
+
 	// if user not found, to be sure I have to
 	// revoke the token
 	if user == nil {
-		_ = r.auth.RevokeToken(claims.User.Email)
+		_ = r.auth.RevokeToken(oldToken.AccessToken)
 		return echo.NewHTTPError(http.StatusNotFound, "user not found")
+	}
+
+
+	// revoke old token
+	if err := r.auth.RevokeToken(oldToken.AccessToken); err != nil {
+		return err
 	}
 
 	authUser := &auth.User{
 		Email:       user.Email,
 		DisplayName: user.DisplayName,
 	}
-	// revoke both access token and refresh token,
-	// and regenerate
+	// regenerate token
 	token, err := r.auth.GenerateToken(authUser)
 	if err != nil {
 		return err

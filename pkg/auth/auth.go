@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 	gonanoid "github.com/matoous/go-nanoid"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
+	"github.com/vietanhduong/ota-server/pkg/logger"
 	"github.com/vietanhduong/ota-server/pkg/redis"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
 	"golang.org/x/exp/rand"
@@ -46,6 +47,21 @@ func (a *Auth) ParseToken(inputToken string) (*TokenClaims, error) {
 	return token.Claims.(*TokenClaims), nil
 }
 
+// GetToken get token from redis by input jti
+func (a *Auth) GetToken(jti string) (*Token, error) {
+	if a.redis.Exists(jti).Val() != 1 {
+		logger.Logger.Warnf("JTI: %s does not exist", jti)
+		return nil, cerrors.BadRequest("token invalid")
+	}
+
+	var token *Token
+	if err := a.redis.GetValue(jti, &token); err != nil {
+		return nil, errors.Wrap(err)
+	}
+
+	return token, nil
+}
+
 // GenerateToken generate token
 func (a *Auth) GenerateToken(user *User) (*Token, error) {
 	// generate Jwt Token Id
@@ -79,7 +95,7 @@ func (a *Auth) GenerateToken(user *User) (*Token, error) {
 	}
 
 	// save to redis
-	if err := a.redis.StoreWithTTL(user.Email, *token, RefreshTokenValidTime); err != nil {
+	if err := a.redis.StoreWithTTL(jti, *token, RefreshTokenValidTime); err != nil {
 		return nil, errors.Wrap(err)
 	}
 
@@ -138,26 +154,35 @@ func (a *Auth) GenerateJti() (string, error) {
 // IsTokenRevoked check token is revoked or not
 func (a *Auth) IsTokenRevoked(token *jwt.Token) bool {
 	claims := token.Claims.(*TokenClaims)
-	result := a.redis.Exists(claims.User.Email).Val()
+	result := a.redis.Exists(claims.Id).Val()
 	return result == 0
 }
 
 // RevokeToken remove token from redis
-func (a *Auth) RevokeToken(email string) error {
+func (a *Auth) RevokeToken(accessToken string) error {
 	// if email does not exist in redis
 	// stop revoke token
-	if a.redis.Exists(email).Val() != 1 {
+	claims, err := a.ParseToken(accessToken)
+	if err != nil {
+		return errors.Wrap(err)
+	}
+
+	if claims.TokenType != Access {
+		return cerrors.UnAuthorized("token invalid")
+	}
+
+	// stop revoke token if not found jti
+	if a.redis.Exists(claims.Id).Val() != 1 {
 		return nil
 	}
 
-	// retrieve token payload in redis
 	var token *Token
-	if err := a.redis.GetValue(email, &token); err != nil {
-		return err
+	if err := a.redis.GetValue(claims.Id, &token); err != nil {
+		return errors.Wrap(err)
 	}
 
 	// revoke token
-	if err := a.redis.Del(email).Err(); err != nil {
+	if err := a.redis.Del(claims.Id).Err(); err != nil {
 		return err
 	}
 
