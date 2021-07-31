@@ -61,7 +61,7 @@ func (a *App) Initialize() {
 	}
 
 	// customize request log
-	format := "\x1b[32mINFO\x1b[0m  | ${time_rfc3339} | ${status} | ${method} ${uri} \n"
+	format := "\x1b[32mINFO\x1b[0m  | ${time_rfc3339} | ${status} | ${id} | ${method} ${uri} \n"
 	a.Echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: format,
 		Output: a.Echo.Logger.Output(),
