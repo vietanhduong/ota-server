@@ -1,19 +1,24 @@
 import React from 'react';
-import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
-import { PublicLayout, PrivateLayout } from 'layouts';
-import { Provider } from 'react-redux';
-import { store } from 'reducers';
-import { MuiThemeProvider } from '@material-ui/core';
-import { appTheme } from 'containers/Theme';
-import { profileAction } from 'actions/profile';
+import {BrowserRouter as Router, Route, Switch} from 'react-router-dom';
+import {PrivateLayout, PublicLayout} from 'layouts';
+import {Provider} from 'react-redux';
+import {store} from 'reducers';
+import {MuiThemeProvider} from '@material-ui/core';
+import {appTheme} from 'containers/Theme';
+import {profileAction} from 'actions/profile';
 import './App.scss';
-import { jwt_decode } from 'utils/common';
+import {jwt_decode} from 'utils/common';
 
 const App = () => {
   const [isReady, setIsReady] = React.useState(false);
 
   React.useEffect(() => {
     const profile = JSON.parse(localStorage.getItem('profile'));
+    if (!profile) {
+      setIsReady(true);
+      return
+    }
+
     const payload = jwt_decode(profile.access_token);
     const timeLeft = payload.exp * 1000 - Date.now();
 
@@ -36,8 +41,8 @@ const App = () => {
         <Router>
           {isReady && (
             <Switch>
-              <Route path='/auth' component={PublicLayout} />
-              <Route path='/' component={PrivateLayout} />
+              <Route path='/auth' component={PublicLayout}/>
+              <Route path='/' component={PrivateLayout}/>
             </Switch>
           )}
         </Router>

@@ -1,19 +1,19 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Loading } from 'components';
-import { Button, Paper, TextField, Typography } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
-import { profileAction } from 'actions/profile';
-import { userService } from 'services/user';
-import { sha256 } from 'utils/common';
-import { publicRoute } from 'routes';
+import {Link} from 'react-router-dom';
+import {Loading} from 'components';
+import {Button, Paper, TextField, Typography} from '@material-ui/core';
+import {makeStyles} from '@material-ui/core/styles';
+import {profileAction} from 'actions/profile';
+import {userService} from 'services/user';
+import {sha256} from 'utils/common';
+import {publicRoute} from 'routes';
 
 const SignInForm = () => {
   const classes = useStyles();
 
-  const [username, setUsername] = React.useState('vietanhs0817@gmail.com');
+  const [username, setUsername] = React.useState('');
   const [usernameError, setUsernameError] = React.useState('');
-  const [password, setPassword] = React.useState('admin');
+  const [password, setPassword] = React.useState('');
   const [passwordError, setPasswordError] = React.useState('');
 
   const [isLoading, setIsLoading] = React.useState(false);
@@ -26,7 +26,7 @@ const SignInForm = () => {
   };
 
   const handleChangeUsername = (event) => {
-    const { value } = event.target;
+    const {value} = event.target;
     setUsername(value);
     setUsernameError(validateUsername(value));
   };
@@ -39,7 +39,7 @@ const SignInForm = () => {
   };
 
   const handleChangePassword = (event) => {
-    const { value } = event.target;
+    const {value} = event.target;
     setPassword(value);
     setPasswordError(validatePassword(value));
   };
@@ -52,7 +52,7 @@ const SignInForm = () => {
     if (usernameError || passwordError) return;
 
     setIsLoading(true);
-    const body = { email: username, password: sha256(password) };
+    const body = {email: username, password: sha256(password)};
     userService
       .login(body)
       .then((profile) => {
@@ -60,7 +60,14 @@ const SignInForm = () => {
         setTimeout(() => {
           profileAction.refresh(profile);
         }, 60 * 55 * 1000);
-      })
+      }).catch(err => {
+      const data = err?.response?.data;
+      if (!data) return console.log(err);
+      if (data.code === 401) {
+        setPassword('');
+        setPasswordError(data.message);
+      }
+    })
       .finally(() => {
         setIsLoading(false);
       });
@@ -98,13 +105,13 @@ const SignInForm = () => {
         variant='contained'
         color='primary'
         className={classes.button}
-        startIcon={<Loading visible={isLoading} />}
+        startIcon={<Loading visible={isLoading}/>}
         onClick={handleClickSubmit}
       >
         {'Sign In'}
       </Button>
 
-      <Typography className={classes.link}>
+      <Typography className={classes.link} style={{display: "none"}}>
         {`Don't have account?`} <Link to={publicRoute.signUp.path}>{'Sign Up'}</Link>
       </Typography>
     </Paper>

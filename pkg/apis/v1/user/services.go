@@ -43,11 +43,11 @@ func (s *service) Login(rl *RequestLogin) (*User, error) {
 	}
 
 	if userModel == nil {
-		return nil, cerrors.NotFound("user not found")
+		return nil, cerrors.UnAuthorized("invalid credentials")
 	}
 
 	if userModel.Password != crypto.NewSHA256([]byte(rl.Password)) {
-		return nil, cerrors.UnAuthorized("wrong password")
+		return nil, cerrors.UnAuthorized("invalid credentials")
 	}
 
 	user := &User{

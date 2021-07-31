@@ -267,7 +267,7 @@ func (a *Auth) RequiredLogin() echo.MiddlewareFunc {
 			// parse to claims
 			claims, err := a.ParseToken(token)
 			if err != nil {
-				return errors.Wrap(err)
+				return err
 			}
 			// just access with token has type is `access`
 			if claims.TokenType != Access {

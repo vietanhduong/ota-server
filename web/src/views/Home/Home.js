@@ -10,9 +10,9 @@ function Home() {
 
   const fetchData = React.useCallback(() => {
     profileService
-      .getProfile()
-      .then((response) => {
-        setData(response.data || []);
+      .getProfiles()
+      .then((res) => {
+        setData(res || []);
       })
       .catch((e) => console.log(e));
   }, []);
@@ -74,7 +74,7 @@ function Home() {
                     </Typography>
                   </Box>
                   <Button color='secondary' onClick={profileAction.logout}>
-                    <Typography variant='body2'>LOGOUT</Typography>
+                    <Typography variant='body2' style={{fontWeight: "bold"}}>Logout</Typography>
                   </Button>
                 </Box>
               }
