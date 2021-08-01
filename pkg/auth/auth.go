@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"encoding/base64"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
@@ -10,7 +9,6 @@ import (
 	"github.com/vietanhduong/ota-server/pkg/logger"
 	"github.com/vietanhduong/ota-server/pkg/redis"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
-	"golang.org/x/exp/rand"
 	"gopkg.in/errgo.v2/errors"
 	"regexp"
 	"strings"
@@ -142,13 +140,13 @@ func (a *Auth) GenerateRefreshToken(user *User, jti string) (string, error) {
 
 // GenerateJti generate jwt token id
 func (a *Auth) GenerateJti() (string, error) {
-	var length = 64
-	b := make([]byte, length)
-	_, err := rand.Read(b)
+	var base = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	var defaultLength = 28
+	code, err := gonanoid.Generate(base, defaultLength)
 	if err != nil {
 		return "", err
 	}
-	return base64.URLEncoding.EncodeToString(b), nil
+	return code, nil
 }
 
 // IsTokenRevoked check token is revoked or not

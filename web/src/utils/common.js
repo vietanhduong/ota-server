@@ -8,7 +8,7 @@ const getHost = () => {
 
 const getExchangeCode = () => {
   const raw = localStorage.getItem(profileAction.PROFILE);
-  if (raw.length === 0) {
+  if (!raw || raw.length === 0) {
     return "";
   }
   const profile = JSON.parse(raw);

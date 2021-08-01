@@ -13,15 +13,20 @@ const App = () => {
   const [isReady, setIsReady] = React.useState(false);
 
   React.useEffect(() => {
-    const profile = JSON.parse(localStorage.getItem('profile'));
-    if (!profile) {
+    let profile = undefined;
+    try {
+      profile = JSON.parse(localStorage.getItem('profile'));
+      if (!profile) {
+        setIsReady(true);
+        return
+      }
+    } catch (e) {
       setIsReady(true);
       return
     }
 
     const payload = jwt_decode(profile.access_token);
     const timeLeft = payload.exp * 1000 - Date.now();
-
     if (timeLeft > 60 * 5 * 1000) {
       profileAction.login(profile);
       setTimeout(() => {

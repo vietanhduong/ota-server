@@ -3,7 +3,7 @@ package auth
 import "time"
 
 const RefreshTokenValidTime = 12 * time.Hour
-const AccessTokenValidTime = time.Hour
+const AccessTokenValidTime = 60 * time.Minute
 
 const Refresh = "refresh"
 const Access = "access"

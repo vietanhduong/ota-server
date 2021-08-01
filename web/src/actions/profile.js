@@ -7,6 +7,9 @@ const PROFILE = 'profile';
 const refresh = async (profile) => {
   await userService
     .refresh({Authorization: `token ${profile.refresh_token}`})
+    .catch(err => {
+
+    })
     .then(login)
     .then((nextProfile) => {
       setTimeout(() => {
@@ -16,6 +19,7 @@ const refresh = async (profile) => {
 };
 
 const login = (profile) => {
+  if (!profile) return profile;
   store.dispatch({
     type: ActionType.USER_LOGIN,
     data: profile,
@@ -29,7 +33,7 @@ const logout = () => {
   if (raw.length === 0) return;
 
   const profile = JSON.parse(raw);
-  userService.logout({Authorization: `token ${profile.access_token}`}).finally(() => {
+  userService.logout({Authorization: `token ${profile.access_token}`}).catch(err => console.log(err)).finally(() => {
     store.dispatch({
       type: ActionType.USER_LOGOUT,
     });
@@ -38,10 +42,15 @@ const logout = () => {
   });
 };
 
+const clearStorage = () => {
+  localStorage.removeItem(PROFILE);
+}
+
 export const profileAction = {
   ActionType,
   login,
   logout,
   refresh,
+  clearStorage,
   PROFILE
 };

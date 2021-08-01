@@ -18,14 +18,18 @@ import {profileAction} from 'actions/profile';
 
 function Home() {
   const [data, setData] = React.useState([]);
-
   const fetchData = React.useCallback(() => {
     profileService
       .getProfiles()
       .then((res) => {
         setData(res || []);
       })
-      .catch((e) => console.log(e));
+      .catch((e) => {
+        if (e.response.status === 401) {
+          profileAction.clearStorage();
+          window.location.href = "/auth/sign-in";
+        }
+      });
   }, []);
 
   const renderGitInfo = (metadata) => {
