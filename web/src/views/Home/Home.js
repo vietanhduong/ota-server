@@ -71,7 +71,9 @@ function Home() {
   };
 
   const exchangeCode = getExchangeCode();
-
+  const getAppIcon = (metadata) => {
+    return metadata?.app_icon ?? "ios-app-icon.png";
+  }
   React.useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -103,7 +105,7 @@ function Home() {
           {data.map((item, index) => (
             <ListItem key={item.profile_id} divider={index + 1 !== data.length} style={{paddingRight: 80}}>
               <ListItemAvatar>
-                <Avatar alt="Travis Howard" src="ios-app-icon.png"/>
+                <Avatar alt="app_icon" src={`${getAppIcon(item.metadata)}?code=${exchangeCode}`}/>
               </ListItemAvatar>
               <ListItemText
                 primary={

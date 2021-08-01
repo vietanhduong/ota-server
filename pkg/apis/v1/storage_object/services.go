@@ -113,6 +113,32 @@ func (s *service) GetObjectByKey(objectKey string) (*File, error) {
 	}, nil
 }
 
+func (s *service) GetObjectsByKeys(objectKeys []string) (map[string]*File, error) {
+	result := make(map[string]*File)
+
+	if objectKeys == nil || len(objectKeys) == 0 {
+		return result, nil
+	}
+
+	objects, err := s.repo.FindByKeys(objectKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, o := range objects {
+		obj := &File{
+			Filename:    o.Name,
+			ContentType: o.ContentType,
+			AbsPath:     o.Path,
+			CreatedAt:   o.CreatedAt,
+			UpdatedAt:   o.UpdatedAt,
+		}
+		result[o.Key] = obj
+	}
+
+	return result, nil
+}
+
 func (s *service) DownloadObject(ctx context.Context, objectKey string) (*File, error) {
 	// verify object id
 	object, err := s.repo.FindByKey(objectKey)

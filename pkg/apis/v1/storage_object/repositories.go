@@ -50,3 +50,12 @@ func (r *repository) FindByKey(objectKey string) (*models.StorageObject, error) 
 	}
 	return model, err
 }
+
+func (r *repository) FindByKeys(objectKeys []string) ([]*models.StorageObject, error) {
+	var objects []*models.StorageObject
+	err := r.Where("`key` IN ?", objectKeys).Find(&objects).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return objects, err
+}

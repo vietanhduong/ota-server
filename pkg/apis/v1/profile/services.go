@@ -15,8 +15,11 @@ import (
 	"net/http"
 )
 
+const AppIcon = "app_icon"
+
 type StorageService interface {
 	GetObjectById(objectId int) (*storage_object.File, error)
+	GetObjectsByKeys(objectKeys []string) (map[string]*storage_object.File, error)
 }
 
 type MetadataService interface {
@@ -82,6 +85,16 @@ func (s *service) GetProfiles() ([]*ResponseProfile, error) {
 		return nil, err
 	}
 
+	var metadataList []*metadata.Metadata
+	for _, ml := range mm {
+		metadataList = append(metadataList, ml...)
+	}
+
+	appIcons, err := s.GetAppIconInMetadata(metadataList)
+	if err != nil {
+		return nil, err
+	}
+
 	// convert to response object
 	var result []*ResponseProfile
 	for _, p := range profiles {
@@ -92,6 +105,13 @@ func (s *service) GetProfiles() ([]*ResponseProfile, error) {
 		profile := ToResponseProfile(p)
 		if m, ok := mm[profile.ProfileId]; ok {
 			profile.Metadata = ConvertMetadataListToMap(m)
+
+			// hook download icon url
+			if v, ok := profile.Metadata[AppIcon]; ok {
+				if url, found := appIcons[v]; found {
+					profile.Metadata[AppIcon] = url
+				}
+			}
 		}
 
 		result = append(result, profile)
@@ -139,7 +159,18 @@ func (s *service) GetProfile(profileId int) (*ResponseProfile, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	profile.Metadata = ConvertMetadataListToMap(m)
+
+	appIcon, err := s.GetAppIconInMetadata(m)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(appIcon) != 0 {
+		profile.Metadata[AppIcon] = appIcon[profile.Metadata[AppIcon]]
+	}
+
 	return profile, nil
 }
 
@@ -208,4 +239,36 @@ func createNotificationMessage(profile *ResponseProfile) string {
 	}
 
 	return fmt.Sprintf("%s%s%s%s%s", title, newLine, info, newLine, git)
+}
+
+// GetAppIconInMetadata get app icon in input list metadata
+// and return a map contains objectKey - download url
+func (s *service) GetAppIconInMetadata(metadataList []*metadata.Metadata) (map[string]string, error) {
+	result := make(map[string]string)
+	var objectKeys []string
+
+	// get all object key in metadata
+	for _, m := range metadataList {
+		if m.Key == AppIcon {
+			objectKeys = append(objectKeys, m.Value)
+		}
+	}
+	// if there are no object key, just end this function
+	if len(objectKeys) == 0 {
+		return result, nil
+	}
+
+	// get all objects
+	// this function return a map contain objectKey - storage_object.File
+	objects, err := s.storageSvc.GetObjectsByKeys(objectKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	// generate download url
+	for key, obj := range objects {
+		result[key] = fmt.Sprintf("%s/api/v1/storages/%s/download/%s", Host, key, obj.Filename)
+	}
+
+	return result, nil
 }

@@ -107,10 +107,14 @@ func (r *register) getManifest(ctx echo.Context) error {
 	payload := map[string]string{
 		"app_name":  profile.AppName,
 		"bundle_id": profile.BundleIdentifier,
-		// ipa_path could be download api
-		"ipa_path": fmt.Sprintf("%s/api/v1/storages/%s/download/%s?code=%s", Host, profile.StorageObject.ObjectKey, profile.StorageObject.Filename, code),
-		"version":  profile.Version,
+		"ipa_path":  fmt.Sprintf("%s/api/v1/storages/%s/download/%s?code=%s", Host, profile.StorageObject.ObjectKey, profile.StorageObject.Filename, code),
+		"version":   profile.Version,
 	}
+
+	if v, found := profile.Metadata[AppIcon]; found {
+		payload[AppIcon] = v
+	}
+
 	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationXML)
 	return ctx.Render(http.StatusOK, "manifest.plist", payload)
 }

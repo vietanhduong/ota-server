@@ -7,13 +7,17 @@ import (
 	"strings"
 )
 
+var AllowedExtensions = []string{".ipa", ".plist", ".apk", ".png", ".jpg", ".jpeg"}
+
 func ValidateExtension(filename string) error {
 	// extract file extension
 	ext := strings.ToLower(filepath.Ext(filename))
 
-	// just accept `.ipa` and `.plist`
-	if ext == IpaExt || ext == PlistExt {
-		return nil
+	for _, e := range AllowedExtensions {
+		if e == ext {
+			return nil
+		}
 	}
+
 	return cerrors.NewCError(http.StatusBadRequest, "only 'plist' and 'ipa' extensions are accepted")
 }
