@@ -3,6 +3,7 @@ package profile
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/vietanhduong/ota-server/pkg/apis/v1/user"
 	"github.com/vietanhduong/ota-server/pkg/auth"
 	"github.com/vietanhduong/ota-server/pkg/mysql"
 	"github.com/vietanhduong/ota-server/pkg/redis"
@@ -19,15 +20,21 @@ type Service interface {
 	GetProfiles() ([]*ResponseProfile, error)
 }
 
+type UserService interface {
+	GetUserInfo(email string) (*user.User, error)
+}
+
 type register struct {
 	profileSvc Service
-	auth *auth.Auth
+	userSvc    UserService
+	auth       *auth.Auth
 }
 
 func Register(g *echo.Group, db *mysql.DB, redis *redis.Client) {
 	reg := register{
 		profileSvc: NewService(db),
-		auth: auth.NewAuth(redis),
+		userSvc:    user.NewService(db),
+		auth:       auth.NewAuth(redis),
 	}
 	profileGroup := g.Group("/profiles")
 
@@ -51,6 +58,16 @@ func (r *register) createProfile(ctx echo.Context) error {
 	if err := ctx.Bind(&reqProfile); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
+
+	// get uploaded user
+	claims := r.auth.GetClaimsInContext(ctx)
+	createdUser, err := r.userSvc.GetUserInfo(claims.User.Email)
+	if err != nil {
+		return err
+	}
+	// set created user id
+	reqProfile.CreatedUserID = createdUser.Id
+
 	res, err := r.profileSvc.CreateProfile(reqProfile)
 	if err != nil {
 		return err

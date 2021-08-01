@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"text/template"
 	"time"
@@ -45,12 +46,9 @@ func (a *App) Initialize() {
 	a.Echo.Use(middlewares.Timeout(10 * time.Minute))
 
 	// serve SPA
-	a.Echo.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-		Root:   env.GetEnvAsStringOrFallback("STATIC_PATH", "./web"),
-		Index:  "index.html",
-		Browse: false,
-		HTML5:  true,
-	}))
+	staticPath := env.GetEnvAsStringOrFallback("STATIC_PATH", "./web")
+	a.Echo.Static("/static", path.Join(staticPath, "/static"))
+	a.Echo.File("/*", path.Join(staticPath, "/index.html"))
 
 	// register error handler
 	a.Echo.HTTPErrorHandler = cerrors.HTTPErrorHandler
@@ -61,7 +59,7 @@ func (a *App) Initialize() {
 	}
 
 	// customize request log
-	format := "\x1b[32mINFO\x1b[0m  | ${time_rfc3339} | ${status} | ${id} | ${method} ${uri} \n"
+	format := "\x1b[32mINFO\x1b[0m  | ${time_rfc3339} | ${status} | ${id} | \u001B[32m${method}\u001B[0m ${uri} \n"
 	a.Echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: format,
 		Output: a.Echo.Logger.Output(),

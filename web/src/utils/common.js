@@ -7,15 +7,17 @@ const getHost = () => {
 }
 
 const getExchangeCode = () => {
-  console.log("call");
   const raw = localStorage.getItem(profileAction.PROFILE);
-  if (raw.length === 0) return "";
+  if (raw.length === 0) {
+    return "";
+  }
   const profile = JSON.parse(raw);
   return profile.exchange_code;
 }
 
-export const getDownloadUrl = ({profile_id}) =>
-  `itms-services://?action=download-manifest&amp;` +
-  `url=${getHost()}/api/v1/profiles/ios/${profile_id}/manifest.plist?code=${getExchangeCode()}`;
 
-export {sha256, jwt_decode};
+export const getDownloadUrl = ({profile_id}, exchangeCode) =>
+  `itms-services://?action=download-manifest&amp;` +
+  `url=${getHost()}/api/v1/profiles/ios/${profile_id}/manifest.plist?code=${exchangeCode}`;
+
+export {sha256, jwt_decode, getExchangeCode};

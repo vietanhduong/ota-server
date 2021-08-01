@@ -28,6 +28,7 @@ func (r *repository) Insert(req *RequestProfile) (*models.Profile, error) {
 		Version:          req.Version,
 		Build:            uint(req.Build),
 		StorageObjectID:  uint(req.StorageObjectID),
+		UserID:           uint(req.CreatedUserID),
 	}
 
 	err := r.Create(&model).Error
@@ -48,4 +49,3 @@ func (r *repository) All() ([]*models.Profile, error) {
 	err := r.Order("id desc").Find(&profiles).Error
 	return profiles, err
 }
-

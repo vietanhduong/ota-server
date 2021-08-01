@@ -9,6 +9,7 @@ type RequestProfile struct {
 	Build            int               `json:"build"`
 	StorageObjectID  int               `json:"object_id"`
 	Metadata         map[string]string `json:"metadata"`
+	CreatedUserID    int               `json:"-"`
 }
 
 type ResponseProfile struct {
@@ -19,6 +20,7 @@ type ResponseProfile struct {
 	Build            uint                   `json:"build"`
 	Metadata         map[string]string      `json:"metadata"`
 	StorageObject    *StorageObjectResponse `json:"storage_object"`
+	CreatedBy        *CreatedByResponse     `json:"created_by"`
 }
 
 type StorageObjectResponse struct {
@@ -26,17 +28,34 @@ type StorageObjectResponse struct {
 	Filename  string `json:"filename"`
 }
 
+type CreatedByResponse struct {
+	Email       string `json:"email"`
+	DisplayName string `json:"display_name"`
+}
+
 // ToResponseProfile convert profile model to profile response object
-func ToResponseProfile(model *models.Profile) *ResponseProfile {
-	return &ResponseProfile{
-		ProfileId:        model.ID,
-		AppName:          model.AppName,
-		BundleIdentifier: model.BundleIdentifier,
-		Version:          model.Version,
-		Build:            model.Build,
-		StorageObject: &StorageObjectResponse{
-			ObjectKey: model.StorageObject.Key,
-			Filename:  model.StorageObject.Name,
-		},
+func ToResponseProfile(p *models.Profile) *ResponseProfile {
+	obj := &ResponseProfile{
+		ProfileId:        p.ID,
+		AppName:          p.AppName,
+		BundleIdentifier: p.BundleIdentifier,
+		Version:          p.Version,
+		Build:            p.Build,
 	}
+
+	if p.StorageObject != nil {
+		obj.StorageObject = &StorageObjectResponse{
+			ObjectKey: p.StorageObject.Key,
+			Filename:  p.StorageObject.Name,
+		}
+	}
+
+	if p.User != nil {
+		obj.CreatedBy = &CreatedByResponse{
+			Email:       p.User.Email,
+			DisplayName: p.User.DisplayName,
+		}
+	}
+
+	return obj
 }

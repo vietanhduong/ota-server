@@ -10,6 +10,7 @@ import (
 	"github.com/vietanhduong/ota-server/pkg/logger"
 	"github.com/vietanhduong/ota-server/pkg/mysql"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
+	"gopkg.in/errgo.v2/errors"
 	"net/http"
 	"regexp"
 	"time"
@@ -77,7 +78,7 @@ func (s *service) GetObjectById(objectId int) (*File, error) {
 	// verify object id
 	object, err := s.repo.FindById(uint(objectId))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err)
 	}
 
 	if object == nil {

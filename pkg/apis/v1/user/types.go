@@ -8,6 +8,7 @@ type RequestLogin struct {
 }
 
 type User struct {
+	Id          int       `json:"id"`
 	Email       string    `json:"email"`
 	DisplayName string    `json:"display_name"`
 	Active      bool      `json:"active"`

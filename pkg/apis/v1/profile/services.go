@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"github.com/vietanhduong/ota-server/pkg/apis/v1/metadata"
 	"github.com/vietanhduong/ota-server/pkg/apis/v1/storage_object"
+	"github.com/vietanhduong/ota-server/pkg/apis/v1/user"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
 	"github.com/vietanhduong/ota-server/pkg/logger"
 	"github.com/vietanhduong/ota-server/pkg/mysql"
 	"github.com/vietanhduong/ota-server/pkg/mysql/models"
 	"github.com/vietanhduong/ota-server/pkg/notifications/telegram"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
+	"gopkg.in/errgo.v2/errors"
 	"net/http"
 )
 
@@ -23,11 +25,17 @@ type MetadataService interface {
 	GetMetadataByListProfileId(profileIds []uint) (map[uint][]*metadata.Metadata, error)
 }
 
+type UserRepository interface {
+	FindByIds(userIds []int, active bool) (map[int]*models.User, error)
+	FindById(userId uint) (*models.User, error)
+}
+
 type service struct {
 	repo        *repository
 	telegramSvc *telegram.Telegram
 	storageSvc  StorageService
 	metadataSvc MetadataService
+	userRepo    UserRepository
 }
 
 func NewService(db *mysql.DB) *service {
@@ -45,6 +53,7 @@ func NewService(db *mysql.DB) *service {
 		storageSvc:  storage_object.NewService(db),
 		metadataSvc: metadata.NewService(db),
 		telegramSvc: _telegram,
+		userRepo:    user.NewRepository(db),
 	}
 }
 
@@ -55,8 +64,16 @@ func (s *service) GetProfiles() ([]*ResponseProfile, error) {
 	}
 	// prepare profile ids
 	var profileIds []uint
+	var userIds []int
 	for _, p := range profiles {
 		profileIds = append(profileIds, p.ID)
+		userIds = append(userIds, int(p.UserID))
+	}
+
+	// fetch user
+	users, err := s.userRepo.FindByIds(userIds, true)
+	if err != nil {
+		return nil, err
 	}
 
 	// fetch metadata
@@ -68,10 +85,15 @@ func (s *service) GetProfiles() ([]*ResponseProfile, error) {
 	// convert to response object
 	var result []*ResponseProfile
 	for _, p := range profiles {
+		if u, ok := users[int(p.UserID)]; ok {
+			p.User = u
+		}
+
 		profile := ToResponseProfile(p)
 		if m, ok := mm[profile.ProfileId]; ok {
 			profile.Metadata = ConvertMetadataListToMap(m)
 		}
+
 		result = append(result, profile)
 	}
 
@@ -87,16 +109,32 @@ func (s *service) GetProfile(profileId int) (*ResponseProfile, error) {
 		return nil, cerrors.NewCError(http.StatusNotFound, "profile does not exist")
 	}
 
+	// find object by object id
 	object, err := s.storageSvc.GetObjectById(int(model.StorageObjectID))
 	if err != nil {
 		return nil, err
 	}
-	model.StorageObject = models.StorageObject{
+
+	// convert to object model
+	// this object is used in generating a manifest
+	model.StorageObject = &models.StorageObject{
 		Key:  object.Key,
 		Name: object.Filename,
 	}
 
+	createdBy, err := s.userRepo.FindById(model.UserID)
+	if err != nil {
+		return nil, errors.Wrap(err)
+	}
+	if createdBy != nil {
+		model.User = &models.User{
+			Email:       createdBy.Email,
+			DisplayName: createdBy.DisplayName,
+		}
+	}
+
 	profile := ToResponseProfile(model)
+
 	m, err := s.metadataSvc.GetMetadata(profileId)
 	if err != nil {
 		return nil, err

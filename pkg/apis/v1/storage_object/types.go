@@ -8,6 +8,7 @@ type File struct {
 	Content     []byte    `json:"-"`
 	ContentType string    `json:"content_type"`
 	AbsPath     string    `json:"abs_path,omitempty"`
+	UploadedBy  int       `json:"uploaded_by"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }

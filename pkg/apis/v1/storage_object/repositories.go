@@ -26,6 +26,7 @@ func (r *repository) Insert(uploadedFile *File) (*models.StorageObject, error) {
 		Key:         uploadedFile.Key,
 		Path:        uploadedFile.AbsPath,
 		ContentType: uploadedFile.ContentType,
+		UserID:      uint(uploadedFile.UploadedBy),
 	}
 
 	err := r.Create(&object).Error

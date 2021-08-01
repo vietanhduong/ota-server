@@ -1,9 +1,18 @@
 import React from 'react';
-import { Box, Button, Link, Paper, Typography } from '@material-ui/core';
-import { List, ListItem, ListItemSecondaryAction, ListItemText } from '@material-ui/core';
-import { profileService } from 'services/profile';
-import { getDownloadUrl } from 'utils/common';
-import { profileAction } from 'actions/profile';
+import {
+  Box,
+  Button,
+  Link,
+  List,
+  ListItem,
+  ListItemSecondaryAction,
+  ListItemText,
+  Paper,
+  Typography
+} from '@material-ui/core';
+import {profileService} from 'services/profile';
+import {getDownloadUrl, getExchangeCode} from 'utils/common';
+import {profileAction} from 'actions/profile';
 
 function Home() {
   const [data, setData] = React.useState([]);
@@ -49,11 +58,13 @@ function Home() {
       <ListItem>
         <ListItemText
           primary={'No data available'}
-          style={{ textAlign: 'center', fontStyle: 'italic', color: 'gray' }}
+          style={{textAlign: 'center', fontStyle: 'italic', color: 'gray'}}
         />
       </ListItem>
     );
   };
+
+  const exchangeCode = getExchangeCode();
 
   React.useEffect(() => {
     fetchData();
@@ -61,15 +72,15 @@ function Home() {
 
   return (
     <Box style={{}}>
-      <Box style={{ maxWidth: 680, margin: '0 auto' }}>
-        <List disablePadding component={Paper} style={{ marginBottom: 10 }} variant='outlined'>
+      <Box style={{maxWidth: 680, margin: '0 auto'}}>
+        <List disablePadding component={Paper} style={{marginBottom: 10}} variant='outlined'>
           <ListItem>
             <ListItemText
               primary={
                 <Box display='flex' justifyContent='space-between'>
                   <Box display='flex' alignItems='center'>
-                    <img alt='' style={{ height: 28 }} src={'apple-icon-57x57.png'} />
-                    <Typography variant='h5' style={{ paddingTop: 3 }}>
+                    <img alt='' style={{height: 28}} src={'apple-icon-57x57.png'}/>
+                    <Typography variant='h5' style={{paddingTop: 3}}>
                       Over-The-Air Server
                     </Typography>
                   </Box>
@@ -84,7 +95,7 @@ function Home() {
         <List disablePadding component={Paper} variant='outlined'>
           {renderNoData(data)}
           {data.map((item, index) => (
-            <ListItem key={item.profile_id} divider={index + 1 !== data.length} style={{ paddingRight: 120 }}>
+            <ListItem key={item.profile_id} divider={index + 1 !== data.length} style={{paddingRight: 120}}>
               <ListItemText
                 primary={`#${item.profile_id}: ${item.app_name}`}
                 secondary={
@@ -100,8 +111,8 @@ function Home() {
                 }
               />
               <ListItemSecondaryAction>
-                <Link href={getDownloadUrl(item)} target='_blank'>
-                  <Button disableElevation variant='contained' color='primary' style={{ borderRadius: 18 }}>
+                <Link href={getDownloadUrl(item, exchangeCode)} target='_blank'>
+                  <Button disableElevation variant='contained' color='primary' style={{borderRadius: 18}}>
                     <Typography variant='body2'>GET</Typography>
                   </Button>
                 </Link>

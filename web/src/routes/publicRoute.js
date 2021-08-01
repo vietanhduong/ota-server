@@ -3,11 +3,11 @@ import { SignUpForm } from 'views/SignUp';
 
 const publicRoute = {
   signIn: {
-    path: '/auth/signIn',
+    path: '/auth/sign-in',
     component: SignInForm,
   },
   signUp: {
-    path: '/auth/signUp',
+    path: '/auth/sign-up',
     component: SignUpForm,
   },
 };

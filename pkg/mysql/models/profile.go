@@ -9,7 +9,7 @@ type Profile struct {
 	Version          string
 	Build            uint
 	StorageObjectID  uint
-	StorageObject    StorageObject
+	StorageObject    *StorageObject
 	UserID           uint
-	User             User
+	User             *User
 }
