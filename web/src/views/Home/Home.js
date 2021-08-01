@@ -1,10 +1,12 @@
 import React from 'react';
 import {
+  Avatar,
   Box,
   Button,
   Link,
   List,
   ListItem,
+  ListItemAvatar,
   ListItemSecondaryAction,
   ListItemText,
   Paper,
@@ -95,9 +97,16 @@ function Home() {
         <List disablePadding component={Paper} variant='outlined'>
           {renderNoData(data)}
           {data.map((item, index) => (
-            <ListItem key={item.profile_id} divider={index + 1 !== data.length} style={{paddingRight: 120}}>
+            <ListItem key={item.profile_id} divider={index + 1 !== data.length} style={{paddingRight: 80}}>
+              <ListItemAvatar>
+                <Avatar alt="Travis Howard" src="ios-app-icon.png"/>
+              </ListItemAvatar>
               <ListItemText
-                primary={`#${item.profile_id}: ${item.app_name}`}
+                primary={
+                  <span style={{fontSize: ".9rem", fontWeight: "bold"}}>
+                    #{item.profile_id}: {item.app_name}
+                  </span>
+                }
                 secondary={
                   <>
                     <span className={'metadata-attribute'}>

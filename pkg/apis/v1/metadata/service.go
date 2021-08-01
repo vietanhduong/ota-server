@@ -63,3 +63,4 @@ func (s *service) GetMetadataByListProfileId(profileIds []uint) (map[uint][]*Met
 
 	return result, nil
 }
+

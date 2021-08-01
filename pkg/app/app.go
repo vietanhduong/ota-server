@@ -37,6 +37,7 @@ func (a *App) Initialize() {
 	a.Echo.Pre(middleware.RemoveTrailingSlash())
 	a.Echo.Use(middleware.Recover())
 	a.Echo.Use(middleware.RequestID())
+	a.Echo.Use(middleware.Gzip())
 	a.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAcceptEncoding},
@@ -47,7 +48,7 @@ func (a *App) Initialize() {
 
 	// serve SPA
 	staticPath := env.GetEnvAsStringOrFallback("STATIC_PATH", "./web")
-	a.Echo.Static("/static", path.Join(staticPath, "/static"))
+	a.Echo.Use(middleware.Static(staticPath))
 	a.Echo.File("/*", path.Join(staticPath, "/index.html"))
 
 	// register error handler

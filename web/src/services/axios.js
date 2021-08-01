@@ -13,7 +13,7 @@ client.interceptors.request.use((config) => {
 });
 
 client.interceptors.response.use(
-  ({data}) => data,
+  ({data}) => data
 );
 
 export {client};

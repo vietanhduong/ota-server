@@ -1,5 +1,6 @@
 {
-  "name": "ota-network",
+  "name": "ota-server",
+  "homepage": ".",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
