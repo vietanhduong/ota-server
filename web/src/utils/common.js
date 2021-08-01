@@ -16,8 +16,8 @@ const getExchangeCode = () => {
 }
 
 
-export const getDownloadUrl = ({profile_id}, exchangeCode) =>
-  `itms-services://?action=download-manifest&amp;` +
-  `url=${getHost()}/api/v1/profiles/ios/${profile_id}/manifest.plist?code=${exchangeCode}`;
+export const getDownloadUrl = ({profile_id}, exchangeCode) => {
+  return `itms-services://?action=download-manifest&url=${getHost()}/api/v1/profiles/ios/${profile_id}/manifest.plist%3Fcode%3D${exchangeCode}`;
+}
 
 export {sha256, jwt_decode, getExchangeCode};

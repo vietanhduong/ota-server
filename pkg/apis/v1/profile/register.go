@@ -112,9 +112,9 @@ func (r *register) getManifest(ctx echo.Context) error {
 	}
 
 	if v, found := profile.Metadata[AppIcon]; found {
-		payload[AppIcon] = v
+		payload[AppIcon] = fmt.Sprintf("%s?code=%s", v, code)
 	}
 
-	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationXML)
+	ctx.Response().Header().Set(echo.HeaderContentType, "text/xml")
 	return ctx.Render(http.StatusOK, "manifest.plist", payload)
 }
