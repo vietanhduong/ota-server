@@ -87,8 +87,8 @@ func (a *App) Initialize() {
 
 	// initialize redis connection
 	redisClient, err := redis.InitializeConnection(redis.Config{
-		Host: env.GetEnvAsStringOrFallback("REDIS_HOST", ""),
-		Port: env.GetEnvAsStringOrFallback("REDIS_PORT", ""),
+		Host: env.GetEnvAsStringOrFallback("REDIS_HOST", "redis"),
+		Port: env.GetEnvAsStringOrFallback("REDIS_PORT", "6379"),
 		DB:   env.GetEnvAsIntOrFallback("REDIS_DB", 0),
 	})
 	if err != nil {
