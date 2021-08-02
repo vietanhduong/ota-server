@@ -1,6 +1,7 @@
 package env
 
 import (
+	"github.com/vietanhduong/ota-server/pkg/logger"
 	"os"
 	"strconv"
 )
@@ -16,13 +17,14 @@ func GetEnvAsStringOrFallback(key, defaultValue string) string {
 
 // GetEnvAsIntOrFallback returns the env variable (parsed as integer) for
 // the given key and falls back to the given defaultValue if not set
-func GetEnvAsIntOrFallback(key string, defaultValue int) (int, error) {
+func GetEnvAsIntOrFallback(key string, defaultValue int) int {
 	if v := os.Getenv(key); v != "" {
 		value, err := strconv.Atoi(v)
 		if err != nil {
-			return defaultValue, err
+			logger.Logger.Warnf("Parse env as int failed with error: %v", err)
+			return defaultValue
 		}
-		return value, nil
+		return value
 	}
-	return defaultValue, nil
+	return defaultValue
 }

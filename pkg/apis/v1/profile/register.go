@@ -3,8 +3,10 @@ package profile
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/vietanhduong/ota-server/pkg/database"
-	"github.com/vietanhduong/ota-server/pkg/middlewares"
+	"github.com/vietanhduong/ota-server/pkg/apis/v1/user"
+	"github.com/vietanhduong/ota-server/pkg/auth"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
+	"github.com/vietanhduong/ota-server/pkg/redis"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
 	"net/http"
 	"strconv"
@@ -18,20 +20,28 @@ type Service interface {
 	GetProfiles() ([]*ResponseProfile, error)
 }
 
-type register struct {
-	profileSvc Service
+type UserService interface {
+	GetUserInfo(email string) (*user.User, error)
 }
 
-func Register(g *echo.Group, db *database.DB) {
-	res := register{
+type register struct {
+	profileSvc Service
+	userSvc    UserService
+	auth       *auth.Auth
+}
+
+func Register(g *echo.Group, db *mysql.DB, redis *redis.Client) {
+	reg := register{
 		profileSvc: NewService(db),
+		userSvc:    user.NewService(db),
+		auth:       auth.NewAuth(redis),
 	}
 	profileGroup := g.Group("/profiles")
 
-	profileGroup.GET("", res.home)
-	profileGroup.POST("/ios", res.createProfile, middlewares.BasicAuth)
-	profileGroup.GET("/ios/:id", res.getProfile)
-	profileGroup.GET("/ios/:id/manifest.plist", res.getManifest)
+	profileGroup.GET("", reg.home, reg.auth.RequiredLogin())
+	profileGroup.POST("/ios", reg.createProfile, reg.auth.RequiredLogin())
+	profileGroup.GET("/ios/:id", reg.getProfile, reg.auth.RequiredLogin())
+	profileGroup.GET("/ios/:id/manifest.plist", reg.getManifest, reg.auth.RequiredExchangeCode())
 }
 
 func (r *register) home(ctx echo.Context) error {
@@ -48,6 +58,16 @@ func (r *register) createProfile(ctx echo.Context) error {
 	if err := ctx.Bind(&reqProfile); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
+
+	// get uploaded user
+	claims := r.auth.GetClaimsInContext(ctx)
+	createdUser, err := r.userSvc.GetUserInfo(claims.User.Email)
+	if err != nil {
+		return err
+	}
+	// set created user id
+	reqProfile.CreatedUserID = createdUser.Id
+
 	res, err := r.profileSvc.CreateProfile(reqProfile)
 	if err != nil {
 		return err
@@ -71,6 +91,8 @@ func (r *register) getProfile(ctx echo.Context) error {
 }
 
 func (r *register) getManifest(ctx echo.Context) error {
+	code := ctx.QueryParam("code")
+
 	reqProfileId := ctx.Param("id")
 	profileId, err := strconv.Atoi(reqProfileId)
 	if err != nil {
@@ -85,10 +107,14 @@ func (r *register) getManifest(ctx echo.Context) error {
 	payload := map[string]string{
 		"app_name":  profile.AppName,
 		"bundle_id": profile.BundleIdentifier,
-		// ipa_path could be download api
-		"ipa_path": fmt.Sprintf("%s/api/v1/storages/%s/download/%s", Host, profile.StorageObject.ObjectKey, profile.StorageObject.Filename),
-		"version":  profile.Version,
+		"ipa_path":  fmt.Sprintf("%s/api/v1/storages/%s/download/%s?code=%s", Host, profile.StorageObject.ObjectKey, profile.StorageObject.Filename, code),
+		"version":   profile.Version,
 	}
-	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationXML)
+
+	if v, found := profile.Metadata[AppIcon]; found {
+		payload[AppIcon] = fmt.Sprintf("%s?code=%s", v, code)
+	}
+
+	ctx.Response().Header().Set(echo.HeaderContentType, "text/xml")
 	return ctx.Render(http.StatusOK, "manifest.plist", payload)
 }

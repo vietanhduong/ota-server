@@ -4,9 +4,11 @@ import (
 	"cloud.google.com/go/storage"
 	"context"
 	"github.com/labstack/echo/v4"
+	"github.com/vietanhduong/ota-server/pkg/apis/v1/user"
+	"github.com/vietanhduong/ota-server/pkg/auth"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
-	"github.com/vietanhduong/ota-server/pkg/database"
-	"github.com/vietanhduong/ota-server/pkg/middlewares"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
+	"github.com/vietanhduong/ota-server/pkg/redis"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -18,19 +20,28 @@ type StorageService interface {
 	DownloadObjectAsStream(ctx context.Context, objectKey string) (*storage.Reader, error)
 	DownloadObject(ctx context.Context, objectKey string) (*File, error)
 }
-type register struct {
-	storageSvc StorageService
+
+type UserService interface {
+	GetUserInfo(email string) (*user.User, error)
 }
 
-func Register(g *echo.Group, db *database.DB) {
-	res := register{
+type register struct {
+	storageSvc StorageService
+	userSvc    UserService
+	auth       *auth.Auth
+}
+
+func Register(g *echo.Group, db *mysql.DB, redis *redis.Client) {
+	reg := register{
 		storageSvc: NewService(db),
+		userSvc:    user.NewService(db),
+		auth:       auth.NewAuth(redis),
 	}
 
 	storageGroup := g.Group("/storages")
-	storageGroup.GET("/:key/download/*", res.download)
-	storageGroup.HEAD("/:key/download/*", res.download)
-	storageGroup.POST("/upload", res.upload, middlewares.BasicAuth)
+	storageGroup.GET("/:key/download/*", reg.download, reg.auth.RequiredExchangeCode())
+	storageGroup.HEAD("/:key/download/*", reg.download, reg.auth.RequiredExchangeCode())
+	storageGroup.POST("/upload", reg.upload, reg.auth.RequiredLogin())
 }
 
 func (r *register) upload(ctx echo.Context) error {
@@ -47,6 +58,13 @@ func (r *register) upload(ctx echo.Context) error {
 
 	defer cerrors.Close(f)
 
+	// get uploaded user
+	claims := r.auth.GetClaimsInContext(ctx)
+	uploader, err := r.userSvc.GetUserInfo(claims.User.Email)
+	if err != nil {
+		return err
+	}
+
 	// read content
 	content, err := ioutil.ReadAll(f)
 	if err != nil {
@@ -56,6 +74,7 @@ func (r *register) upload(ctx echo.Context) error {
 		Filename:    file.Filename,
 		Content:     content,
 		ContentType: file.Header.Get("Content-Type"),
+		UploadedBy:  uploader.Id,
 	}
 
 	resObj, err := r.storageSvc.UploadToStorage(ctx.Request().Context(), uploadedFile)

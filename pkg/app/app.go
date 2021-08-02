@@ -6,24 +6,28 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/vietanhduong/ota-server/pkg/apis/v1/profile"
 	"github.com/vietanhduong/ota-server/pkg/apis/v1/storage_object"
+	"github.com/vietanhduong/ota-server/pkg/apis/v1/user"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
-	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/logger"
 	"github.com/vietanhduong/ota-server/pkg/middlewares"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
+	"github.com/vietanhduong/ota-server/pkg/redis"
 	"github.com/vietanhduong/ota-server/pkg/templates"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"text/template"
 	"time"
 )
 
 type App struct {
-	Echo *echo.Echo
-	DB   *database.DB
+	Echo  *echo.Echo
+	MySQL *mysql.DB
+	Redis *redis.Client
 }
 
 func (a *App) Initialize() {
@@ -32,6 +36,7 @@ func (a *App) Initialize() {
 	// configure server
 	a.Echo.Pre(middleware.RemoveTrailingSlash())
 	a.Echo.Use(middleware.Recover())
+	a.Echo.Use(middleware.RequestID())
 	a.Echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAcceptEncoding},
@@ -41,12 +46,9 @@ func (a *App) Initialize() {
 	a.Echo.Use(middlewares.Timeout(10 * time.Minute))
 
 	// serve SPA
-	a.Echo.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-		Root:   env.GetEnvAsStringOrFallback("STATIC_PATH", "./web"),
-		Index:  "index.html",
-		Browse: false,
-		HTML5:  true,
-	}))
+	staticPath := env.GetEnvAsStringOrFallback("STATIC_PATH", "./web")
+	a.Echo.Use(middleware.Static(staticPath))
+	a.Echo.File("/*", path.Join(staticPath, "/index.html"))
 
 	// register error handler
 	a.Echo.HTTPErrorHandler = cerrors.HTTPErrorHandler
@@ -57,8 +59,9 @@ func (a *App) Initialize() {
 	}
 
 	// customize request log
+	format := "\x1b[32mINFO\x1b[0m  | ${time_rfc3339} | ${status} | ${id} | \u001B[32m${method}\u001B[0m ${uri} \n"
 	a.Echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "INFO | ${time_rfc3339} | ${status} | ${method} ${uri} \n",
+		Format: format,
 		Output: a.Echo.Logger.Output(),
 	}))
 
@@ -69,7 +72,7 @@ func (a *App) Initialize() {
 	// initialize database connection
 	// make sure you have injected the database configuration
 	// into the environment
-	db, err := database.InitializeDatabase(database.Config{
+	db, err := mysql.InitializeDatabase(mysql.Config{
 		Username: env.GetEnvAsStringOrFallback("DB_USERNAME", ""),
 		Password: env.GetEnvAsStringOrFallback("DB_PASSWORD", ""),
 		Host:     env.GetEnvAsStringOrFallback("DB_HOST", ""),
@@ -77,14 +80,26 @@ func (a *App) Initialize() {
 		Instance: env.GetEnvAsStringOrFallback("DB_INSTANCE", ""),
 	})
 	if err != nil {
-		a.Echo.Logger.Fatalf("initialize database connection failed!\nErr: %+v", err)
+		a.Echo.Logger.Fatalf("initialize database connection failed with error: %+v", err)
 	}
 
-	a.DB = db
+	a.MySQL = db
+
+	// initialize redis connection
+	redisClient, err := redis.InitializeConnection(redis.Config{
+		Host: env.GetEnvAsStringOrFallback("REDIS_HOST", ""),
+		Port: env.GetEnvAsStringOrFallback("REDIS_PORT", ""),
+		DB:   env.GetEnvAsIntOrFallback("REDIS_DB", 0),
+	})
+	if err != nil {
+		a.Echo.Logger.Fatalf("initialize redis connection failed with error: %+v", err)
+	}
+
+	a.Redis = redisClient
 
 	// auto migrate database on startup
-	if autoMigrate, _ := env.GetEnvAsIntOrFallback("AUTO_MIGRATE", 0); autoMigrate == 1 {
-		if err := a.DB.Migration(); err != nil {
+	if autoMigrate := env.GetEnvAsIntOrFallback("AUTO_MIGRATE", 0); autoMigrate == 1 {
+		if err := a.MySQL.Migration(); err != nil {
 			a.Echo.Logger.Fatalf("migrate database was error %+v", err)
 		}
 	}
@@ -133,6 +148,7 @@ func (a *App) Run(addr string) {
 func (a *App) initializeRoutes() {
 	g := a.Echo.Group("/api/v1")
 
-	profile.Register(g, a.DB)
-	storage_object.Register(g, a.DB)
+	profile.Register(g, a.MySQL, a.Redis)
+	storage_object.Register(g, a.MySQL, a.Redis)
+	user.Register(g, a.MySQL, a.Redis)
 }

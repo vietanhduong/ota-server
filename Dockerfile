@@ -2,7 +2,7 @@
 FROM node:12-alpine as web
 WORKDIR /usr/src
 COPY ./web/package.json .
-COPY ./web/package-lock.json .
+COPY ./web/yarn.lock .
 RUN yarn install
 COPY ./web .
 RUN yarn build

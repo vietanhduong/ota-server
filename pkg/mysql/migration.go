@@ -1,6 +1,6 @@
-package database
+package mysql
 
-import "github.com/vietanhduong/ota-server/pkg/database/models"
+import "github.com/vietanhduong/ota-server/pkg/mysql/models"
 
 func (db *DB) Migration() (err error) {
 	// migrate storage object model
@@ -15,6 +15,11 @@ func (db *DB) Migration() (err error) {
 
 	// migrate metadata model
 	if err = db.AutoMigrate(&models.Metadata{}); err != nil {
+		return
+	}
+
+	// migrate user model
+	if err = db.AutoMigrate(&models.User{}); err != nil {
 		return
 	}
 

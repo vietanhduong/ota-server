@@ -3,14 +3,14 @@ package storage_object
 import (
 	"cloud.google.com/go/storage"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/lithammer/shortuuid/v3"
 	"github.com/vietanhduong/ota-server/pkg/cerrors"
-	"github.com/vietanhduong/ota-server/pkg/database"
 	"github.com/vietanhduong/ota-server/pkg/google/gcs"
 	"github.com/vietanhduong/ota-server/pkg/logger"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
 	"github.com/vietanhduong/ota-server/pkg/utils/env"
+	"gopkg.in/errgo.v2/errors"
 	"net/http"
 	"regexp"
 	"time"
@@ -21,7 +21,7 @@ type service struct {
 	storage *gcs.GoogleStorage
 }
 
-func NewService(db *database.DB) *service {
+func NewService(db *mysql.DB) *service {
 	googleCredentialsPath := env.GetEnvAsStringOrFallback("GOOGLE_CREDENTIALS", gcs.DefaultCredentialsPath)
 	gcsBucket := env.GetEnvAsStringOrFallback("GCS_BUCKET", gcs.DefaultBucketName)
 
@@ -78,11 +78,11 @@ func (s *service) GetObjectById(objectId int) (*File, error) {
 	// verify object id
 	object, err := s.repo.FindById(uint(objectId))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err)
 	}
 
 	if object == nil {
-		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
+		return nil, cerrors.NewCError(http.StatusNotFound, "object does not exist")
 	}
 	return &File{
 		Key:         object.Key,
@@ -102,7 +102,7 @@ func (s *service) GetObjectByKey(objectKey string) (*File, error) {
 	}
 
 	if object == nil {
-		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
+		return nil, cerrors.NewCError(http.StatusNotFound, "object does not exist")
 	}
 	return &File{
 		Filename:    object.Name,
@@ -113,6 +113,32 @@ func (s *service) GetObjectByKey(objectKey string) (*File, error) {
 	}, nil
 }
 
+func (s *service) GetObjectsByKeys(objectKeys []string) (map[string]*File, error) {
+	result := make(map[string]*File)
+
+	if objectKeys == nil || len(objectKeys) == 0 {
+		return result, nil
+	}
+
+	objects, err := s.repo.FindByKeys(objectKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, o := range objects {
+		obj := &File{
+			Filename:    o.Name,
+			ContentType: o.ContentType,
+			AbsPath:     o.Path,
+			CreatedAt:   o.CreatedAt,
+			UpdatedAt:   o.UpdatedAt,
+		}
+		result[o.Key] = obj
+	}
+
+	return result, nil
+}
+
 func (s *service) DownloadObject(ctx context.Context, objectKey string) (*File, error) {
 	// verify object id
 	object, err := s.repo.FindByKey(objectKey)
@@ -121,7 +147,7 @@ func (s *service) DownloadObject(ctx context.Context, objectKey string) (*File, 
 	}
 
 	if object == nil {
-		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
+		return nil, cerrors.NewCError(http.StatusNotFound, "object does not exist")
 	}
 
 	content, err := s.storage.ReadObject(ctx, object.Path)
@@ -143,7 +169,7 @@ func (s *service) DownloadObjectAsStream(ctx context.Context, objectKey string) 
 	}
 
 	if object == nil {
-		return nil, cerrors.NewCError(http.StatusNotFound, errors.New("object does not exist"))
+		return nil, cerrors.NewCError(http.StatusNotFound, "object does not exist")
 	}
 
 	stream, err := s.storage.ReadObjectAsStream(ctx, object.Path)

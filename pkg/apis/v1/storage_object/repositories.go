@@ -2,13 +2,13 @@ package storage_object
 
 import (
 	"errors"
-	"github.com/vietanhduong/ota-server/pkg/database"
-	"github.com/vietanhduong/ota-server/pkg/database/models"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
+	"github.com/vietanhduong/ota-server/pkg/mysql/models"
 	"gorm.io/gorm"
 )
 
 type repository struct {
-	*database.DB
+	*mysql.DB
 }
 
 type Repository interface {
@@ -16,7 +16,7 @@ type Repository interface {
 	FindById(objectId uint) (*models.StorageObject, error)
 }
 
-func NewRepository(db *database.DB) *repository {
+func NewRepository(db *mysql.DB) *repository {
 	return &repository{db}
 }
 
@@ -26,6 +26,7 @@ func (r *repository) Insert(uploadedFile *File) (*models.StorageObject, error) {
 		Key:         uploadedFile.Key,
 		Path:        uploadedFile.AbsPath,
 		ContentType: uploadedFile.ContentType,
+		UserID:      uint(uploadedFile.UploadedBy),
 	}
 
 	err := r.Create(&object).Error
@@ -48,4 +49,13 @@ func (r *repository) FindByKey(objectKey string) (*models.StorageObject, error) 
 		return nil, nil
 	}
 	return model, err
+}
+
+func (r *repository) FindByKeys(objectKeys []string) ([]*models.StorageObject, error) {
+	var objects []*models.StorageObject
+	err := r.Where("`key` IN ?", objectKeys).Find(&objects).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return objects, err
 }

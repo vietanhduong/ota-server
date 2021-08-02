@@ -1,112 +1,59 @@
 import React from 'react';
-import {
-    Box,
-    Button,
-    Link,
-    List,
-    ListItem,
-    ListItemSecondaryAction,
-    ListItemText,
-    Paper,
-    Typography
-} from '@material-ui/core';
-import axios from 'axios';
+import {BrowserRouter as Router, Route, Switch} from 'react-router-dom';
+import {PrivateLayout, PublicLayout} from 'layouts';
+import {Provider} from 'react-redux';
+import {store} from 'reducers';
+import {MuiThemeProvider} from '@material-ui/core';
+import {appTheme} from 'containers/Theme';
+import {profileAction} from 'actions/profile';
+import './App.scss';
+import {jwt_decode} from 'utils/common';
 
-const getHost = () => {
-    return process.env.REACT_APP_HOST || window.location.origin;
-}
+const App = () => {
+  const [isReady, setIsReady] = React.useState(false);
 
-const client = axios.create({
-    baseURL: `${getHost()}/api/v1`
-});
-
-function App() {
-    const [data, setData] = React.useState([]);
-
-    const fetchData = React.useCallback(() => {
-        client.get('/profiles').then((response) => {
-            setData(response.data || []);
-        }).catch(e => console.log(e));
-    }, []);
-
-    const renderGitInfo = (metadata) => {
-        metadata = metadata || {}
-        // just ignore if metadata does not contains `repo`, `commit` or `pr_number` key
-        if (!('repo' in metadata) || (!('commit' in metadata) && !('pr_number' in metadata))) return "";
-        // if `pr_number` is null => render commit hash
-        if (!metadata.pr_number) {
-            return (<span className={'metadata-attribute'}>
-                <b className={'mr5'}>commit:</b>
-                <Link href={`${metadata.repo}/commit/${metadata.commit}`}
-                      target='_blank'>{metadata.commit.substring(0, 6)}</Link>
-            </span>)
-        }
-        // else render pr number
-        return (<span className={'metadata-attribute'}>
-            <b className={'mr5'}>pr:</b>
-            <Link href={`${metadata.repo}/pull/${metadata.pr_number}`}
-                  target='_blank'>#{metadata.pr_number}</Link>
-        </span>)
-
+  React.useEffect(() => {
+    let profile = undefined;
+    try {
+      profile = JSON.parse(localStorage.getItem('profile'));
+      if (!profile) {
+        setIsReady(true);
+        return
+      }
+    } catch (e) {
+      setIsReady(true);
+      return
     }
 
-    const renderNoData = (d) => {
-        if (d.length > 0) return '';
-        return (<ListItem>
-            <ListItemText primary={'No data available'}
-                          style={{textAlign: "center", fontStyle: "italic", color: "gray"}}/>
-        </ListItem>)
-    };
+    const payload = jwt_decode(profile.access_token);
+    const timeLeft = payload.exp * 1000 - Date.now();
+    if (timeLeft > 60 * 5 * 1000) {
+      profileAction.login(profile);
+      setTimeout(() => {
+        profileAction.refresh(profile);
+      }, timeLeft - 60 * 5 * 1000);
+      setIsReady(true);
+    } else {
+      profileAction.refresh(profile).finally(() => {
+        setIsReady(true);
+      });
+    }
+  }, []);
 
-    React.useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
-
-    return (
-        <Box style={{}}>
-            <Box style={{maxWidth: 680, margin: "0 auto"}}>
-                <List disablePadding component={Paper} style={{marginBottom: 10}} variant="outlined">
-                    <ListItem>
-                        <ListItemText primary={<div style={{display: "flex", justifyContent: "start"}}>
-                            <img alt="" style={{width: 30}} src={"apple-icon-57x57.png"}/>
-                            <Typography variant='h5' style={{paddingTop: 3}}>Over-The-Air Server</Typography>
-                        </div>}/>
-                    </ListItem>
-                </List>
-                <List disablePadding component={Paper} variant="outlined">
-                    {renderNoData(data)}
-                    {data.map((item, index) => (
-                        <ListItem key={item.profile_id} divider={index + 1 !== data.length} style={{paddingRight: 120}}>
-                            <ListItemText primary={`#${item.profile_id}: ${item.app_name}`}
-                                          secondary={
-                                              <>
-                                                  <span className={'metadata-attribute'}>
-                                                      <b className={'mr5'}>version:</b> {item.version}
-                                                  </span>
-                                                  <span className={'metadata-attribute'}>
-                                                      <b className={'mr5'}>build:</b> {item.build}
-                                                  </span>
-                                                  {renderGitInfo(item.metadata)}
-                                              </>
-                                          }/>
-                            <ListItemSecondaryAction>
-                                <Link
-                                    href={`itms-services://?action=download-manifest&amp;url=${getHost()}/api/v1/profiles/ios/${item.profile_id}/manifest.plist`}
-                                    target='_blank'
-                                >
-                                    <Button disableElevation variant='contained' color='primary'
-                                            style={{borderRadius: 18}}>
-                                        <Typography variant='body2'>GET</Typography>
-                                    </Button>
-                                </Link>
-                            </ListItemSecondaryAction>
-                        </ListItem>
-                    ))}
-                </List>
-            </Box>
-        </Box>
-    );
-}
+  return (
+    <Provider store={store}>
+      <MuiThemeProvider theme={appTheme}>
+        <Router>
+          {isReady && (
+            <Switch>
+              <Route path='/auth' component={PublicLayout}/>
+              <Route path='/' component={PrivateLayout}/>
+            </Switch>
+          )}
+        </Router>
+      </MuiThemeProvider>
+    </Provider>
+  );
+};
 
 export default App;

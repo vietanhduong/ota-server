@@ -7,8 +7,9 @@ import (
 )
 
 type Response struct {
-	Code    int         `json:"code"`
-	Message interface{} `json:"message"`
+	Code      int         `json:"code"`
+	Message   interface{} `json:"message"`
+	RequestID string      `json:"request_id,omitempty"`
 }
 
 func HTTPErrorHandler(err error, ctx echo.Context) {
@@ -23,12 +24,13 @@ func HTTPErrorHandler(err error, ctx echo.Context) {
 
 	if ce, ok := err.(*CError); ok {
 		code = ce.Code
-		msg = ce.Error()
+		msg = ce.Err
 	}
 
 	response := &Response{
-		Code:    code,
-		Message: msg,
+		Code:      code,
+		Message:   msg,
+		RequestID: GetRequestID(ctx),
 	}
 
 	if err := ctx.JSON(code, response); err != nil {

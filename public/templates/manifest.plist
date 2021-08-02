@@ -13,6 +13,16 @@
                         <key>url</key>
                         <string>{{index .ipa_path}}</string>
                     </dict>
+                    {{- if .app_icon}}
+                    <dict>
+                        <key>kind</key>
+                        <string>display-image</string>
+                        <key>needs-shine</key>
+                        <false/>
+                        <key>url</key>
+                        <string>{{index .app_icon}}</string>
+                    </dict>
+                    {{- end}}
                 </array>
                 <key>metadata</key>
                 <dict>

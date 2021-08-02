@@ -2,13 +2,13 @@ package profile
 
 import (
 	"errors"
-	"github.com/vietanhduong/ota-server/pkg/database"
-	"github.com/vietanhduong/ota-server/pkg/database/models"
+	"github.com/vietanhduong/ota-server/pkg/mysql"
+	"github.com/vietanhduong/ota-server/pkg/mysql/models"
 	"gorm.io/gorm"
 )
 
 type repository struct {
-	*database.DB
+	*mysql.DB
 }
 
 type Repository interface {
@@ -17,7 +17,7 @@ type Repository interface {
 	All() ([]*models.Profile, error)
 }
 
-func NewRepository(db *database.DB) *repository {
+func NewRepository(db *mysql.DB) *repository {
 	return &repository{db}
 }
 
@@ -28,6 +28,7 @@ func (r *repository) Insert(req *RequestProfile) (*models.Profile, error) {
 		Version:          req.Version,
 		Build:            uint(req.Build),
 		StorageObjectID:  uint(req.StorageObjectID),
+		UserID:           uint(req.CreatedUserID),
 	}
 
 	err := r.Create(&model).Error
@@ -48,4 +49,3 @@ func (r *repository) All() ([]*models.Profile, error) {
 	err := r.Order("id desc").Find(&profiles).Error
 	return profiles, err
 }
-
