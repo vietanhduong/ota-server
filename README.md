@@ -11,7 +11,7 @@ system.
 
 OTA Server has a built-in Notification system, if any build is created, 
 it will send a notification to a channel, a group on Telegram. 
-This is very beneficial when integrating OTA Serer into CI/CD.
+This is very useful when integrating OTA Sever into **CI/CD**.
 
 I use GCS (Google Cloud Storage) to store builds, using GCS ensures that builds are always available. 
 Every time there is a download request, 
@@ -25,9 +25,10 @@ The OTA Server has a built-in authentication system. It simply uses JWT (Json We
 But one point to note is that the OTA installation method for iOS uses the `itms-services` protocol to download the configuration file (.plist). 
 
 Basically, the `itms-services` protocol cannot understand JWT, so a simpler authentication mechanism is needed. 
-The OTA Server will generate 1 code to exchange with customers **(exchange_code)**. 
+The OTA Server will generate 1 code to exchange with client side **(exchange_code)**. 
 
-The Exchange Code will be generated when the user logs into the system, and it has the same effect as the Access Token.
+The Exchange Code will be generated when the user logged-in the system, and it has the same effect as the Access Token.
+
 There are **2 APIs** that use Exchange Code authentication: the API to download the configuration file, and the API to download the uploaded files.
 
 ### Environments
