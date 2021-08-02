@@ -1,7 +1,6 @@
 package redis
 
 import (
-	"fmt"
 	"github.com/go-redis/redis"
 )
 
@@ -11,7 +10,7 @@ type Client struct {
 
 func InitializeConnection(cfg Config) (*Client, error) {
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprint(cfg.Host, ":", cfg.Port),
+		Addr:     cfg.Address,
 		Password: cfg.Password,
 		DB:       cfg.DB,
 	})

@@ -14,8 +14,8 @@ DB_INSTANCE=db_instance
 AUTO_MIGRATE=1 # 1 = auto migrate when startup, on production it should be 0 or remove
 
 # redis config variables
-REDIS_HOST=localhost
-REDIS_PORT=6379
+REDIS_ADDR=localhost:6379
+REDIS_PASSWORD=password
 REDIS_DB=0
 
 # storage config variables

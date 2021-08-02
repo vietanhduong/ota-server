@@ -87,9 +87,9 @@ func (a *App) Initialize() {
 
 	// initialize redis connection
 	redisClient, err := redis.InitializeConnection(redis.Config{
-		Host: env.GetEnvAsStringOrFallback("REDIS_HOST", "redis"),
-		Port: env.GetEnvAsStringOrFallback("REDIS_PORT", "6379"),
-		DB:   env.GetEnvAsIntOrFallback("REDIS_DB", 0),
+		Address:  env.GetEnvAsStringOrFallback("REDIS_ADDR", "redis"),
+		DB:       env.GetEnvAsIntOrFallback("REDIS_DB", 0),
+		Password: env.GetEnvAsStringOrFallback("REDIS_PASSWORD", ""),
 	})
 	if err != nil {
 		a.Echo.Logger.Fatalf("initialize redis connection failed with error: %+v", err)
