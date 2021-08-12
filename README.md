@@ -9,7 +9,7 @@ system.
 
 ### Introduction
 
-OTA Server has a built-in Notification system, if any build is created, 
+The OTA Server has a built-in Notification system, if any build is created, 
 it will send a notification to a channel, a group on Telegram. 
 This is very useful when integrating OTA Sever into **CI/CD**.
 
@@ -18,6 +18,9 @@ Every time there is a download request,
 the OTA Server will open a connection directly from GCS to the client, 
 instead of downloading from GCS and then sending it to the client. 
 This will reduce the download time on the client side.
+
+OTA Server has a pretty simple architecture, the frontend is written in **ReactJS** and the backend is written in **Go**. 
+I have combined frontend and backend in the same container *(docker)*. 
 
 ### Authentication
 The OTA Server has a built-in authentication system. It simply uses JWT (Json Web Token) to authenticate the user. 
@@ -67,6 +70,12 @@ TELEGRAM_GROUP_ID=your_group_id # https://stackoverflow.com/questions/33858927/h
 There are several ways to start the OTA Server
 
 #### Binary
+As mentioned above, the OTA Server is written by both ReactJS (UI) and Golang, 
+so all you need to do is build the UI first. 
+```shell
+cd web && yarn install && yarn build && cd -
+```
+
 Make sure that the environment variables listed above 
 have been exported to the environment.
 ```shell
