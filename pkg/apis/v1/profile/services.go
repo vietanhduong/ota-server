@@ -219,7 +219,7 @@ func createNotificationMessage(profile *ResponseProfile) string {
 	const newLine = "\n"
 
 	host := env.GetEnvAsStringOrFallback("HOST", "https://ota.anhdv.dev")
-	title := fmt.Sprintf("Just got a new *build (#%d)* uploaded to OTA server [%s](%s)", profile.ProfileId, host, host)
+	title := fmt.Sprintf("*[iOS]* Just got a new *build (#%d)* uploaded to OTA server [%s](%s)", profile.ProfileId, host, host)
 	info := fmt.Sprintf("*Information*%s---%s*App name:*` %s` %s*Version:*` %s` %s*Build:*` %d`", newLine, newLine, profile.AppName, newLine, profile.Version, newLine, profile.Build)
 	// stop send git information if repo is not appeared in metadata
 	repo, found := profile.Metadata["repo"]
